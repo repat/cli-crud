@@ -145,98 +145,124 @@ class CrudCommand extends Command
     protected function showListActions(string $resourceClass, Collection $items, int $page, int $totalPages, bool $showTrashed): void
     {
         $resource = new $resourceClass();
-        $options = [
-            'create' => "Create new {$resource::getSingularLabel()}",
-            'page' => 'Go to page...',
-        ];
+        $options = [];
+
+        foreach ($items as $index => $item) {
+            $label = $this->getItemLabel($item, $resource);
+            $options["record_{$index}"] = $label;
+        }
+
+        $options['create'] = "Create new {$resource::getSingularLabel()}";
+        $options['page'] = 'Go to page...';
 
         if ($resource::usesSoftDeletes()) {
             $options['toggle_trashed'] = $showTrashed ? 'Show active records' : 'Show trashed records';
         }
 
-        foreach ($items as $index => $item) {
-            $label = $this->getItemLabel($item, $resource);
-            $options["view_{$index}"] = "View: {$label}";
-
-            if ($showTrashed) {
-                if ($this->authorizer->restore($resource, $item)) {
-                    $options["restore_{$index}"] = "Restore: {$label}";
-                }
-                if ($this->authorizer->forceDelete($resource, $item)) {
-                    $options["force_delete_{$index}"] = "Force delete: {$label}";
-                }
-            } else {
-                if ($this->authorizer->delete($resource, $item)) {
-                    $options["delete_{$index}"] = "Delete: {$label}";
-                }
-            }
-        }
-
         $options['back'] = 'Back to resource menu';
         $options['quit'] = 'Quit';
 
-        $action = select(
-            label: 'Select an action',
+        $selection = select(
+            label: 'Select a record',
             options: $options
         );
 
-        $this->handleListAction($action, $resourceClass, $items, $page, $totalPages, $showTrashed);
+        $this->handleListSelection($selection, $resourceClass, $items, $page, $totalPages, $showTrashed);
     }
 
-    protected function handleListAction(string $action, string $resourceClass, Collection $items, int $page, int $totalPages, bool $showTrashed): void
+    protected function handleListSelection(string $selection, string $resourceClass, Collection $items, int $page, int $totalPages, bool $showTrashed): void
     {
-        if ($action === 'quit') {
+        if ($selection === 'quit') {
             return;
         }
 
-        if ($action === 'create') {
+        if ($selection === 'create') {
             $this->showCreateForm($resourceClass);
             return;
         }
 
-        if ($action === 'page') {
+        if ($selection === 'page') {
             $newPage = $this->askForPageNumber($totalPages);
             $this->showListView($resourceClass, $newPage, $showTrashed);
             return;
         }
 
-        if ($action === 'toggle_trashed') {
+        if ($selection === 'toggle_trashed') {
             $this->showListView($resourceClass, 1, !$showTrashed);
             return;
         }
 
-        if ($action === 'back') {
+        if ($selection === 'back') {
             $this->showResourceMenu($resourceClass);
             return;
         }
 
-        if (str_starts_with($action, 'view_')) {
-            $index = (int) substr($action, 5);
+        if (str_starts_with($selection, 'record_')) {
+            $index = (int) substr($selection, 7);
             $item = $items[$index];
+            $this->showRecordActionMenu($resourceClass, $item, $page, $showTrashed);
+            return;
+        }
+    }
+
+    protected function showRecordActionMenu(string $resourceClass, Model $item, int $page, bool $showTrashed): void
+    {
+        $resource = new $resourceClass();
+        $options = [];
+
+        $options['view'] = 'View details';
+
+        $isTrashed = $resource::usesSoftDeletes() && $item->trashed();
+
+        if ($isTrashed) {
+            if ($this->authorizer->restore($resource, $item)) {
+                $options['restore'] = 'Restore';
+            }
+            if ($this->authorizer->forceDelete($resource, $item)) {
+                $options['force_delete'] = 'Force delete';
+            }
+        } else {
+            if ($this->authorizer->delete($resource, $item)) {
+                $options['delete'] = 'Delete';
+            }
+        }
+
+        $options['back'] = 'Back to list';
+
+        $action = select(
+            label: 'What would you like to do?',
+            options: $options
+        );
+
+        $this->handleRecordAction($action, $resourceClass, $item, $page, $showTrashed);
+    }
+
+    protected function handleRecordAction(string $action, string $resourceClass, Model $item, int $page, bool $showTrashed): void
+    {
+        if ($action === 'view') {
             $this->showDetailView($resourceClass, $item);
             return;
         }
 
-        if (str_starts_with($action, 'delete_')) {
-            $index = (int) substr($action, 7);
-            $item = $items[$index];
+        if ($action === 'delete') {
             $this->deleteModel($resourceClass, $item);
             $this->showListView($resourceClass, $page, $showTrashed);
             return;
         }
 
-        if (str_starts_with($action, 'restore_')) {
-            $index = (int) substr($action, 8);
-            $item = $items[$index];
+        if ($action === 'restore') {
             $this->restoreModel($resourceClass, $item);
             $this->showListView($resourceClass, $page, $showTrashed);
             return;
         }
 
-        if (str_starts_with($action, 'force_delete_')) {
-            $index = (int) substr($action, 13);
-            $item = $items[$index];
+        if ($action === 'force_delete') {
             $this->forceDeleteModel($resourceClass, $item);
+            $this->showListView($resourceClass, $page, $showTrashed);
+            return;
+        }
+
+        if ($action === 'back') {
             $this->showListView($resourceClass, $page, $showTrashed);
             return;
         }
