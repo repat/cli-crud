@@ -14,6 +14,7 @@ use Repat\CliCrud\Resources\ResourceRegistrar;
 use Repat\CliCrud\Tables\TableRenderer;
 
 use function Laravel\Prompts\confirm;
+use function Laravel\Prompts\datatable;
 use function Laravel\Prompts\menu;
 use function Laravel\Prompts\select;
 
@@ -145,67 +146,37 @@ class CrudCommand extends Command
     protected function showListActions(string $resourceClass, Collection $items, int $page, int $totalPages, bool $showTrashed): void
     {
         $resource = new $resourceClass();
-        $options = [];
+        $columns = $resource::tableColumns();
 
+        $headers = array_map(fn($col) => ucfirst(str_replace('_', ' ', $col)), $columns);
+
+        $rows = [];
         foreach ($items as $index => $item) {
-            $label = $this->getItemLabel($item, $resource);
-            $options["record_{$index}"] = $label;
+            $row = [];
+            foreach ($columns as $column) {
+                $value = data_get($item, $column);
+                $row[] = $this->formatTableValue($value);
+            }
+            $rows[$index] = $row;
         }
 
-        $options['create'] = "Create new {$resource::getSingularLabel()}";
-        $options['page'] = 'Go to page...';
-
-        if ($resource::usesSoftDeletes()) {
-            $options['toggle_trashed'] = $showTrashed ? 'Show active records' : 'Show trashed records';
-        }
-
-        $options['back'] = 'Back to resource menu';
-        $options['quit'] = 'Quit';
-
-        $selection = select(
-            label: 'Select a record',
-            options: $options
+        $selectedIndex = datatable(
+            headers: $headers,
+            rows: $rows,
+            scroll: 10,
+            label: 'Select a record (↑/↓ navigate, / search, Enter select)',
         );
 
-        $this->handleListSelection($selection, $resourceClass, $items, $page, $totalPages, $showTrashed);
-    }
-
-    protected function handleListSelection(string $selection, string $resourceClass, Collection $items, int $page, int $totalPages, bool $showTrashed): void
-    {
-        if ($selection === 'quit') {
-            return;
-        }
-
-        if ($selection === 'create') {
-            $this->showCreateForm($resourceClass);
-            return;
-        }
-
-        if ($selection === 'page') {
-            $newPage = $this->askForPageNumber($totalPages);
-            $this->showListView($resourceClass, $newPage, $showTrashed);
-            return;
-        }
-
-        if ($selection === 'toggle_trashed') {
-            $this->showListView($resourceClass, 1, !$showTrashed);
-            return;
-        }
-
-        if ($selection === 'back') {
+        if ($selectedIndex === null) {
             $this->showResourceMenu($resourceClass);
             return;
         }
 
-        if (str_starts_with($selection, 'record_')) {
-            $index = (int) substr($selection, 7);
-            $item = $items[$index];
-            $this->showRecordActionMenu($resourceClass, $item, $page, $showTrashed);
-            return;
-        }
+        $selectedItem = $items[$selectedIndex];
+        $this->showRecordActionMenu($resourceClass, $selectedItem, $page, $totalPages, $showTrashed);
     }
 
-    protected function showRecordActionMenu(string $resourceClass, Model $item, int $page, bool $showTrashed): void
+    protected function showRecordActionMenu(string $resourceClass, Model $item, int $page, int $totalPages, bool $showTrashed): void
     {
         $resource = new $resourceClass();
         $options = [];
@@ -227,20 +198,32 @@ class CrudCommand extends Command
             }
         }
 
-        $options['back'] = 'Back to list';
+        $options['create'] = "Create new {$resource::getSingularLabel()}";
+
+        if ($resource::usesSoftDeletes()) {
+            $options['toggle_trashed'] = $showTrashed ? 'Show active records' : 'Show trashed records';
+        }
+
+        if ($totalPages > 1) {
+            $options['page'] = 'Go to page...';
+        }
+
+        $options['back'] = 'Back to resource menu';
+        $options['quit'] = 'Quit';
 
         $action = select(
-            label: 'What would you like to do?',
+            label: "What would you like to do with {$this->getItemLabel($item, $resource)}?",
             options: $options
         );
 
-        $this->handleRecordAction($action, $resourceClass, $item, $page, $showTrashed);
+        $this->handleRecordAction($action, $resourceClass, $item, $page, $totalPages, $showTrashed);
     }
 
-    protected function handleRecordAction(string $action, string $resourceClass, Model $item, int $page, bool $showTrashed): void
+    protected function handleRecordAction(string $action, string $resourceClass, Model $item, int $page, int $totalPages, bool $showTrashed): void
     {
         if ($action === 'view') {
             $this->showDetailView($resourceClass, $item);
+            $this->showListView($resourceClass, $page, $showTrashed);
             return;
         }
 
@@ -262,10 +245,48 @@ class CrudCommand extends Command
             return;
         }
 
-        if ($action === 'back') {
+        if ($action === 'create') {
+            $this->showCreateForm($resourceClass);
             $this->showListView($resourceClass, $page, $showTrashed);
             return;
         }
+
+        if ($action === 'toggle_trashed') {
+            $this->showListView($resourceClass, 1, !$showTrashed);
+            return;
+        }
+
+        if ($action === 'page') {
+            $newPage = $this->askForPageNumber($totalPages);
+            $this->showListView($resourceClass, $newPage, $showTrashed);
+            return;
+        }
+
+        if ($action === 'back') {
+            $this->showResourceMenu($resourceClass);
+            return;
+        }
+
+        if ($action === 'quit') {
+            return;
+        }
+    }
+
+    protected function formatTableValue(mixed $value): string
+    {
+        if (is_null($value)) {
+            return 'NULL';
+        }
+
+        if (is_bool($value)) {
+            return $value ? 'Yes' : 'No';
+        }
+
+        if ($value instanceof \DateTimeInterface) {
+            return $value->format('Y-m-d H:i:s');
+        }
+
+        return (string) $value;
     }
 
     protected function askForPageNumber(int $totalPages): int
