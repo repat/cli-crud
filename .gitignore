@@ -1,0 +1,10 @@
+/vendor/
+/.phpunit.cache/
+/.idea/
+/.vscode/
+*.swp
+*.swo
+*~
+.DS_Store
+Thumbs.db
+composer.lock

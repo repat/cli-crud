@@ -1,0 +1,51 @@
+{
+    "name": "repat/cli-crud",
+    "description": "CLI CRUD admin panel for Laravel, inspired by Filament and Nova",
+    "keywords": [
+        "laravel",
+        "cli",
+        "crud",
+        "admin",
+        "eloquent"
+    ],
+    "license": "MIT",
+    "authors": [
+        {
+            "name": "repat",
+            "email": "repat@repat.de"
+        }
+    ],
+    "require": {
+        "php": "^8.2",
+        "laravel/prompts": "^0.3.0",
+        "illuminate/support": "^12.0|^13.0",
+        "illuminate/database": "^12.0|^13.0",
+        "illuminate/console": "^12.0|^13.0"
+    },
+    "require-dev": {
+        "orchestra/testbench": "^10.0|^11.0",
+        "phpunit/phpunit": "^11.0"
+    },
+    "autoload": {
+        "psr-4": {
+            "Repat\\CliCrud\\": "src/"
+        }
+    },
+    "autoload-dev": {
+        "psr-4": {
+            "Repat\\CliCrud\\Tests\\": "tests/"
+        }
+    },
+    "extra": {
+        "laravel": {
+            "providers": [
+                "Repat\\CliCrud\\CliCrudServiceProvider"
+            ]
+        }
+    },
+    "config": {
+        "sort-packages": true
+    },
+    "minimum-stability": "dev",
+    "prefer-stable": true
+}
