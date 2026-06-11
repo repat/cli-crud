@@ -46,7 +46,7 @@ class TableRenderer
         }
 
         if ($value instanceof \DateTimeInterface) {
-            return $value->format('Y-m-d H:i:s');
+            return $value->format(config('cli-crud.display.date_format', 'Y-m-d H:i:s'));
         }
 
         return (string) $value;

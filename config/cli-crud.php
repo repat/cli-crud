@@ -12,4 +12,7 @@ return [
     'authorization' => [
         'enabled' => false,
     ],
+    'display' => [
+        'date_format' => 'Y-m-d H:i:s',
+    ],
 ];

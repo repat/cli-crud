@@ -4,7 +4,13 @@ namespace Repat\CliCrud\Fields;
 
 class DateTime extends Field
 {
-    protected string $format = 'Y-m-d H:i:s';
+    protected string $format;
+
+    public function __construct(string $name)
+    {
+        parent::__construct($name);
+        $this->format = config('cli-crud.display.date_format', 'Y-m-d H:i:s');
+    }
 
     public function format(string $format): static
     {

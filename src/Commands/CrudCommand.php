@@ -136,9 +136,6 @@ class CrudCommand extends Command
 
         $this->info("\n{$resource::getLabel()}\n");
 
-        $tableOutput = $this->tableRenderer->render($items, $resource::tableColumns(), $page, $totalPages);
-        $this->line($tableOutput);
-
         if ($items->isEmpty()) {
             $this->showResourceMenu($resourceClass);
 
@@ -297,7 +294,7 @@ class CrudCommand extends Command
         }
 
         if ($value instanceof \DateTimeInterface) {
-            return $value->format('Y-m-d H:i:s');
+            return $value->format(config('cli-crud.display.date_format', 'Y-m-d H:i:s'));
         }
 
         return (string) $value;
@@ -342,7 +339,7 @@ class CrudCommand extends Command
         }
 
         if ($value instanceof \DateTimeInterface) {
-            return $value->format('Y-m-d H:i:s');
+            return $value->format(config('cli-crud.display.date_format', 'Y-m-d H:i:s'));
         }
 
         return (string) $value;
