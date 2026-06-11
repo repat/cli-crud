@@ -22,6 +22,10 @@ class Authorizer
             return true;
         }
 
+        if (!$this->hasAuthenticatedUser()) {
+            return true;
+        }
+
         $modelClass = $resource::getModel();
 
         if (!$this->hasPolicy($modelClass)) {
@@ -41,6 +45,10 @@ class Authorizer
             return true;
         }
 
+        if (!$this->hasAuthenticatedUser()) {
+            return true;
+        }
+
         if (!$this->hasPolicy(get_class($model))) {
             return true;
         }
@@ -55,6 +63,10 @@ class Authorizer
     public function create(Resource $resource): bool
     {
         if (!$this->enabled) {
+            return true;
+        }
+
+        if (!$this->hasAuthenticatedUser()) {
             return true;
         }
 
@@ -77,6 +89,10 @@ class Authorizer
             return true;
         }
 
+        if (!$this->hasAuthenticatedUser()) {
+            return true;
+        }
+
         if (!$this->hasPolicy(get_class($model))) {
             return true;
         }
@@ -94,6 +110,10 @@ class Authorizer
             return true;
         }
 
+        if (!$this->hasAuthenticatedUser()) {
+            return true;
+        }
+
         if (!$this->hasPolicy(get_class($model))) {
             return true;
         }
@@ -108,6 +128,10 @@ class Authorizer
     public function restore(Resource $resource, Model $model): bool
     {
         if (!$this->enabled) {
+            return true;
+        }
+
+        if (!$this->hasAuthenticatedUser()) {
             return true;
         }
 
@@ -172,5 +196,10 @@ class Authorizer
         } catch (\Exception $e) {
             return false;
         }
+    }
+
+    protected function hasAuthenticatedUser(): bool
+    {
+        return auth()->check();
     }
 }

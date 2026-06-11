@@ -145,7 +145,17 @@ This opens an interactive menu where you can:
 
 ## Authorization
 
-The package integrates with Laravel's Gates and Policies. If a policy exists for a model, the package will check:
+The package integrates with Laravel's Gates and Policies. Authorization is **disabled by default** since this is a CLI tool.
+
+To enable authorization, update `config/cli-crud.php`:
+
+```php
+'authorization' => [
+    'enabled' => true,
+],
+```
+
+When enabled, the package checks:
 
 - `viewAny` - Can view the resource list
 - `view` - Can view a specific record
@@ -154,15 +164,9 @@ The package integrates with Laravel's Gates and Policies. If a policy exists for
 - `forceDelete` - Can permanently delete soft-deleted records
 - `restore` - Can restore soft-deleted records
 
-If no policy exists, all actions are allowed by default.
+**Note:** If no user is authenticated (typical in CLI), all actions are allowed regardless of policy settings.
 
-Disable authorization in config:
-
-```php
-'authorization' => [
-    'enabled' => false,
-],
-```
+If no policy exists for a model, all actions are allowed by default.
 
 ## Field Validation
 

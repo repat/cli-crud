@@ -5,6 +5,7 @@ namespace Repat\CliCrud\Fields;
 class Text extends Field
 {
     protected bool $email = false;
+    protected bool $isPassword = false;
 
     public function email(): static
     {
@@ -12,9 +13,20 @@ class Text extends Field
         return $this;
     }
 
+    public function password(): static
+    {
+        $this->isPassword = true;
+        return $this;
+    }
+
+    public function isPassword(): bool
+    {
+        return $this->isPassword;
+    }
+
     public function getPromptComponent(): string
     {
-        return 'text';
+        return $this->isPassword ? 'password' : 'text';
     }
 
     public function getPromptOptions(): array

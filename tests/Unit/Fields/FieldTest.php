@@ -30,6 +30,14 @@ class FieldTest extends TestCase
         $this->assertContains('email', $rules);
     }
 
+    public function test_text_field_with_password(): void
+    {
+        $field = Text::make('password')->password();
+
+        $this->assertTrue($field->isPassword());
+        $this->assertEquals('password', $field->getPromptComponent());
+    }
+
     public function test_text_field_required(): void
     {
         $field = Text::make('name')->required();

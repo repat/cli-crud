@@ -57,7 +57,8 @@ class TableRenderer
         $widths = $this->calculateColumnWidths($data, $columns);
         $output = '';
 
-        $output .= $this->formatRow($columns, $widths, true);
+        $headerRow = array_combine($columns, $columns);
+        $output .= $this->formatRow($headerRow, $widths, true);
         $output .= $this->formatSeparator($widths);
 
         foreach ($data as $row) {

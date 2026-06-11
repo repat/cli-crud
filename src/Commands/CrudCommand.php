@@ -74,11 +74,16 @@ class CrudCommand extends Command
         foreach ($resources as $resource) {
             $options[$resource] = $resource::getLabel();
         }
+        $options['quit'] = 'Quit';
 
         $selected = select(
             label: 'Select a resource',
             options: $options
         );
+
+        if ($selected === 'quit') {
+            return;
+        }
 
         $this->showResourceMenu($selected);
     }
@@ -91,6 +96,7 @@ class CrudCommand extends Command
             'list' => "List {$resource::getLabel()}",
             'create' => "Create new {$resource::getSingularLabel()}",
             'back' => 'Back to main menu',
+            'quit' => 'Quit',
         ];
 
         $action = select(
@@ -102,6 +108,7 @@ class CrudCommand extends Command
             'list' => $this->showListView($resourceClass, 1),
             'create' => $this->showCreateForm($resourceClass),
             'back' => $this->handle(),
+            'quit' => null,
         };
     }
 
@@ -166,6 +173,7 @@ class CrudCommand extends Command
         }
 
         $options['back'] = 'Back to resource menu';
+        $options['quit'] = 'Quit';
 
         $action = select(
             label: 'Select an action',
@@ -177,6 +185,10 @@ class CrudCommand extends Command
 
     protected function handleListAction(string $action, string $resourceClass, Collection $items, int $page, int $totalPages, bool $showTrashed): void
     {
+        if ($action === 'quit') {
+            return;
+        }
+
         if ($action === 'create') {
             $this->showCreateForm($resourceClass);
             return;
@@ -321,11 +333,16 @@ class CrudCommand extends Command
         }
 
         $options['back'] = 'Back to list';
+        $options['quit'] = 'Quit';
 
         $action = select(
             label: 'Select an action',
             options: $options
         );
+
+        if ($action === 'quit') {
+            return;
+        }
 
         match ($action) {
             'delete' => $this->deleteModel($resourceClass, $model),

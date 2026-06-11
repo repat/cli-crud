@@ -14,6 +14,7 @@ use Repat\CliCrud\Fields\Text;
 use Repat\CliCrud\Fields\Textarea;
 
 use function Laravel\Prompts\confirm;
+use function Laravel\Prompts\password;
 use function Laravel\Prompts\search;
 use function Laravel\Prompts\select;
 use function Laravel\Prompts\text;
@@ -73,9 +74,22 @@ class FormBuilder
 
     protected function promptForText(Text $field, string $label, mixed $currentValue): string
     {
+        if ($field->isPassword()) {
+            $options = [
+                'label' => $label,
+            ];
+
+            $promptOptions = $field->getPromptOptions();
+            if (isset($promptOptions['validate'])) {
+                $options['validate'] = $promptOptions['validate'];
+            }
+
+            return password(...$options);
+        }
+
         $options = [
             'label' => $label,
-            'default' => $currentValue ?? $field->getDefault(),
+            'default' => (string) ($currentValue ?? $field->getDefault() ?? ''),
         ];
 
         $promptOptions = $field->getPromptOptions();
@@ -90,7 +104,7 @@ class FormBuilder
     {
         $options = [
             'label' => $label,
-            'default' => $currentValue ?? $field->getDefault(),
+            'default' => (string) ($currentValue ?? $field->getDefault() ?? ''),
         ];
 
         $promptOptions = $field->getPromptOptions();
@@ -105,26 +119,32 @@ class FormBuilder
     {
         return confirm(
             label: $label,
-            default: $currentValue ?? $field->getDefault() ?? false
+            default: (bool) ($currentValue ?? $field->getDefault() ?? false)
         );
     }
 
     protected function promptForSelect(Select $field, string $label, mixed $currentValue): mixed
     {
         $promptOptions = $field->getPromptOptions();
+        $default = $currentValue ?? $field->getDefault();
+        
+        $options = [
+            'label' => $label,
+            'options' => $promptOptions['options'],
+        ];
+        
+        if ($default !== null) {
+            $options['default'] = $default;
+        }
 
-        return select(
-            label: $label,
-            options: $promptOptions['options'],
-            default: $currentValue ?? $field->getDefault()
-        );
+        return select(...$options);
     }
 
     protected function promptForDateTime(DateTime $field, string $label, mixed $currentValue): string
     {
         $options = [
             'label' => $label,
-            'default' => $currentValue ?? $field->getDefault(),
+            'default' => (string) ($currentValue ?? $field->getDefault() ?? ''),
         ];
 
         $promptOptions = $field->getPromptOptions();
@@ -142,7 +162,7 @@ class FormBuilder
     {
         return textarea(
             label: $label,
-            default: $currentValue ?? $field->getDefault()
+            default: (string) ($currentValue ?? $field->getDefault() ?? '')
         );
     }
 
