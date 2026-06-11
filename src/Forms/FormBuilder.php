@@ -23,7 +23,7 @@ use function Laravel\Prompts\textarea;
 class FormBuilder
 {
     /**
-     * @param array<Field|BelongsTo> $fields
+     * @param  array<Field|BelongsTo>  $fields
      */
     public function build(array $fields, ?Model $model = null): array
     {
@@ -127,12 +127,12 @@ class FormBuilder
     {
         $promptOptions = $field->getPromptOptions();
         $default = $currentValue ?? $field->getDefault();
-        
+
         $options = [
             'label' => $label,
             'options' => $promptOptions['options'],
         ];
-        
+
         if ($default !== null) {
             $options['default'] = $default;
         }
@@ -174,7 +174,7 @@ class FormBuilder
 
         return search(
             label: $label,
-            options: fn(string $value) => strlen($value) > 0
+            options: fn (string $value) => strlen($value) > 0
                 ? $relatedModel::where($displayField, 'like', "%{$value}%")
                     ->limit(10)
                     ->pluck($displayField, 'id')
@@ -185,7 +185,7 @@ class FormBuilder
 
     protected function guessDisplayField(string $modelClass): string
     {
-        $model = new $modelClass();
+        $model = new $modelClass;
         $fillable = $model->getFillable();
 
         foreach (['name', 'title', 'label', 'email'] as $field) {
@@ -198,7 +198,7 @@ class FormBuilder
     }
 
     /**
-     * @param array<Field|BelongsTo> $fields
+     * @param  array<Field|BelongsTo>  $fields
      */
     protected function buildValidationRules(array $fields): array
     {
@@ -206,7 +206,7 @@ class FormBuilder
 
         foreach ($fields as $field) {
             if ($field instanceof BelongsTo) {
-                $rules[$field->getName()] = ['required', 'exists:' . $field->getResource()::getModelInstance()->getTable() . ',id'];
+                $rules[$field->getName()] = ['required', 'exists:'.$field->getResource()::getModelInstance()->getTable().',id'];
             } else {
                 $rules[$field->getName()] = $field->getRules();
             }

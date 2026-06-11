@@ -9,6 +9,7 @@ class DateTime extends Field
     public function format(string $format): static
     {
         $this->format = $format;
+
         return $this;
     }
 
@@ -21,7 +22,7 @@ class DateTime extends Field
     {
         return [
             'placeholder' => $this->format,
-            'validate' => fn($value) => $this->isValidDate($value)
+            'validate' => fn ($value) => $this->isValidDate($value)
                 ? null
                 : "Please enter a valid date in format: {$this->format}",
         ];
@@ -30,13 +31,15 @@ class DateTime extends Field
     public function getRules(): array
     {
         $rules = parent::getRules();
-        $rules[] = 'date_format:' . $this->format;
+        $rules[] = 'date_format:'.$this->format;
+
         return $rules;
     }
 
     protected function isValidDate(string $value): bool
     {
         $date = \DateTime::createFromFormat($this->format, $value);
+
         return $date && $date->format($this->format) === $value;
     }
 }

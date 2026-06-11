@@ -5,17 +5,20 @@ namespace Repat\CliCrud\Fields;
 class Text extends Field
 {
     protected bool $email = false;
+
     protected bool $isPassword = false;
 
     public function email(): static
     {
         $this->email = true;
+
         return $this;
     }
 
     public function password(): static
     {
         $this->isPassword = true;
+
         return $this;
     }
 
@@ -34,7 +37,7 @@ class Text extends Field
         $options = [];
 
         if ($this->email) {
-            $options['validate'] = fn($value) => filter_var($value, FILTER_VALIDATE_EMAIL)
+            $options['validate'] = fn ($value) => filter_var($value, FILTER_VALIDATE_EMAIL)
                 ? null
                 : 'Please enter a valid email address.';
         }

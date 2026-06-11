@@ -18,7 +18,7 @@ class ResourceRegistrar
 
     protected function discoverResources(): void
     {
-        if (!File::isDirectory($this->path)) {
+        if (! File::isDirectory($this->path)) {
             return;
         }
 
@@ -39,22 +39,22 @@ class ResourceRegistrar
 
     protected function getClassNameFromFile(\SplFileInfo $file): ?string
     {
-        $relativePath = Str::after($file->getPathname(), $this->path . DIRECTORY_SEPARATOR);
+        $relativePath = Str::after($file->getPathname(), $this->path.DIRECTORY_SEPARATOR);
         $relativePath = Str::beforeLast($relativePath, '.php');
         $relativePath = str_replace(DIRECTORY_SEPARATOR, '\\', $relativePath);
 
-        return $this->namespace . '\\' . $relativePath;
+        return $this->namespace.'\\'.$relativePath;
     }
 
     public function register(string $resourceClass): void
     {
-        if (!in_array($resourceClass, $this->resources)) {
+        if (! in_array($resourceClass, $this->resources)) {
             $this->resources[] = $resourceClass;
         }
     }
 
     /**
-     * @return array<class-string<Resource>>
+     * @return array<class-string<resource>>
      */
     public function getResources(): array
     {

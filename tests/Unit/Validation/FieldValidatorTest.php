@@ -6,7 +6,7 @@ use Repat\CliCrud\Exceptions\FieldMismatchException;
 use Repat\CliCrud\Fields\Boolean;
 use Repat\CliCrud\Fields\Number;
 use Repat\CliCrud\Fields\Text;
-use Repat\CliCrud\Tests\Fixtures\Resources\UserResource;
+use Repat\CliCrud\Tests\Fixtures\User;
 use Repat\CliCrud\Tests\TestCase;
 use Repat\CliCrud\Validation\FieldValidator;
 
@@ -17,14 +17,17 @@ class FieldValidatorTest extends TestCase
     protected function setUp(): void
     {
         parent::setUp();
-        $this->validator = new FieldValidator();
+        $this->validator = new FieldValidator;
     }
 
     public function test_validates_correct_field_types(): void
     {
-        $resource = new class extends \Repat\CliCrud\Resources\Resource {
-            protected static string $model = \Repat\CliCrud\Tests\Fixtures\User::class;
+        $resource = new class extends \Repat\CliCrud\Resources\Resource
+        {
+            protected static string $model = User::class;
+
             protected static string $label = 'Users';
+
             protected static string $singularLabel = 'User';
 
             public static function fields(): array
@@ -49,9 +52,12 @@ class FieldValidatorTest extends TestCase
 
     public function test_throws_exception_for_wrong_field_type(): void
     {
-        $resource = new class extends \Repat\CliCrud\Resources\Resource {
-            protected static string $model = \Repat\CliCrud\Tests\Fixtures\User::class;
+        $resource = new class extends \Repat\CliCrud\Resources\Resource
+        {
+            protected static string $model = User::class;
+
             protected static string $label = 'Users';
+
             protected static string $singularLabel = 'User';
 
             public static function fields(): array
@@ -75,9 +81,12 @@ class FieldValidatorTest extends TestCase
 
     public function test_throws_exception_for_nonexistent_column(): void
     {
-        $resource = new class extends \Repat\CliCrud\Resources\Resource {
-            protected static string $model = \Repat\CliCrud\Tests\Fixtures\User::class;
+        $resource = new class extends \Repat\CliCrud\Resources\Resource
+        {
+            protected static string $model = User::class;
+
             protected static string $label = 'Users';
+
             protected static string $singularLabel = 'User';
 
             public static function fields(): array

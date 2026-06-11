@@ -2,16 +2,15 @@
 
 namespace Repat\CliCrud\Tests\Fixtures\Resources;
 
-use Repat\CliCrud\Resources\Resource;
 use Repat\CliCrud\Fields\Text;
-use Repat\CliCrud\Fields\Number;
-use Repat\CliCrud\Fields\Boolean;
-use Repat\CliCrud\Fields\DateTime;
+use Repat\CliCrud\Resources\Resource;
 
 class TestUserResource extends Resource
 {
     protected static string $model = App\Models\TestUser::class;
+
     protected static string $label = 'TestUsers';
+
     protected static string $singularLabel = 'TestUser';
 
     public static function fields(): array

@@ -11,7 +11,9 @@ use Repat\CliCrud\Tests\Fixtures\User;
 class UserResource extends Resource
 {
     protected static string $model = User::class;
+
     protected static string $label = 'Users';
+
     protected static string $singularLabel = 'User';
 
     public static function fields(): array

@@ -11,7 +11,9 @@ use Repat\CliCrud\Tests\Fixtures\Post;
 class PostResource extends Resource
 {
     protected static string $model = Post::class;
+
     protected static string $label = 'Posts';
+
     protected static string $singularLabel = 'Post';
 
     public static function fields(): array

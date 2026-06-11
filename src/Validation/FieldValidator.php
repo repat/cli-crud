@@ -54,7 +54,7 @@ class FieldValidator
     {
         $fieldName = $field->getName();
 
-        if (!$columnMap->has($fieldName)) {
+        if (! $columnMap->has($fieldName)) {
             throw FieldMismatchException::columnNotFound($fieldName, $table);
         }
 
@@ -68,7 +68,7 @@ class FieldValidator
             return;
         }
 
-        if (!in_array($fieldClass, $allowedTypes)) {
+        if (! in_array($fieldClass, $allowedTypes)) {
             $expectedType = class_basename($fieldClass);
             throw FieldMismatchException::forField($fieldName, $expectedType, $columnType);
         }

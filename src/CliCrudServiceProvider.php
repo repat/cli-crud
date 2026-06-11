@@ -15,29 +15,31 @@ class CliCrudServiceProvider extends ServiceProvider
 {
     public function register(): void
     {
-        $this->mergeConfigFrom(__DIR__ . '/../config/cli-crud.php', 'cli-crud');
+        $this->mergeConfigFrom(__DIR__.'/../config/cli-crud.php', 'cli-crud');
 
         $this->app->singleton(ResourceRegistrar::class, function ($app) {
             $path = config('cli-crud.resources.path');
             $namespace = config('cli-crud.resources.namespace');
+
             return new ResourceRegistrar($path, $namespace);
         });
 
         $this->app->singleton(Authorizer::class, function ($app) {
             $enabled = config('cli-crud.authorization.enabled', true);
+
             return new Authorizer($enabled);
         });
 
         $this->app->singleton(TableRenderer::class, function ($app) {
-            return new TableRenderer();
+            return new TableRenderer;
         });
 
         $this->app->singleton(FormBuilder::class, function ($app) {
-            return new FormBuilder();
+            return new FormBuilder;
         });
 
         $this->app->singleton(FieldValidator::class, function ($app) {
-            return new FieldValidator();
+            return new FieldValidator;
         });
     }
 
@@ -45,11 +47,11 @@ class CliCrudServiceProvider extends ServiceProvider
     {
         if ($this->app->runningInConsole()) {
             $this->publishes([
-                __DIR__ . '/../config/cli-crud.php' => config_path('cli-crud.php'),
+                __DIR__.'/../config/cli-crud.php' => config_path('cli-crud.php'),
             ], 'cli-crud-config');
 
             $this->publishes([
-                __DIR__ . '/../stubs/cli-resource.stub' => base_path('stubs/cli-crud/cli-resource.stub'),
+                __DIR__.'/../stubs/cli-resource.stub' => base_path('stubs/cli-crud/cli-resource.stub'),
             ], 'cli-crud-stubs');
 
             $this->commands([

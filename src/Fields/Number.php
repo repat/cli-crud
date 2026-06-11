@@ -9,6 +9,7 @@ class Number extends Field
     public function float(): static
     {
         $this->integer = false;
+
         return $this;
     }
 
@@ -20,7 +21,7 @@ class Number extends Field
     public function getPromptOptions(): array
     {
         return [
-            'validate' => fn($value) => $this->integer
+            'validate' => fn ($value) => $this->integer
                 ? (filter_var($value, FILTER_VALIDATE_INT) !== false ? null : 'Please enter a valid integer.')
                 : (is_numeric($value) ? null : 'Please enter a valid number.'),
         ];
@@ -30,6 +31,7 @@ class Number extends Field
     {
         $rules = parent::getRules();
         $rules[] = $this->integer ? 'integer' : 'numeric';
+
         return $rules;
     }
 }

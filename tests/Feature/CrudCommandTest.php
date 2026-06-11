@@ -2,7 +2,6 @@
 
 namespace Repat\CliCrud\Tests\Feature;
 
-use Repat\CliCrud\Tests\Fixtures\User;
 use Repat\CliCrud\Tests\TestCase;
 
 class CrudCommandTest extends TestCase
@@ -11,7 +10,7 @@ class CrudCommandTest extends TestCase
     {
         config(['cli-crud.resources.path' => app_path('CliCrud/Resources')]);
         config(['cli-crud.resources.namespace' => 'App\\CliCrud\\Resources']);
-        
+
         $this->artisan('make:cli-resource', ['name' => 'TestUser'])
             ->expectsOutput('Resource [TestUserResource] created successfully.')
             ->assertExitCode(0);
@@ -32,7 +31,7 @@ class CrudCommandTest extends TestCase
     {
         config(['cli-crud.resources.path' => app_path('CliCrud/Resources')]);
         config(['cli-crud.resources.namespace' => 'App\\CliCrud\\Resources']);
-        
+
         $this->artisan('make:cli-resource', ['name' => 'TestUser'])
             ->assertExitCode(0);
 

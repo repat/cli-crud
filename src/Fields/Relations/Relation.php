@@ -7,6 +7,7 @@ use Repat\CliCrud\Resources\Resource;
 abstract class Relation
 {
     protected string $name;
+
     protected string $resourceClass;
 
     public function __construct(string $name, string $resourceClass)
@@ -31,11 +32,11 @@ abstract class Relation
     }
 
     /**
-     * @return class-string<Resource>
+     * @return class-string<resource>
      */
     public function getResource(): Resource
     {
-        return new $this->resourceClass();
+        return new $this->resourceClass;
     }
 
     abstract public function getRelationType(): string;

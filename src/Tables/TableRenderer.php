@@ -16,7 +16,7 @@ class TableRenderer
         $table = $this->formatTable($tableData, $columns);
         $pagination = $this->formatPagination($currentPage, $totalPages);
 
-        return $table . "\n" . $pagination . "\n";
+        return $table."\n".$pagination."\n";
     }
 
     protected function buildTableData(Collection $items, array $columns): array
@@ -92,10 +92,10 @@ class TableRenderer
 
         foreach ($widths as $column => $width) {
             $value = $row[$column] ?? '';
-            $output .= ' ' . str_pad($value, $width) . ' |';
+            $output .= ' '.str_pad($value, $width).' |';
         }
 
-        return $output . "\n";
+        return $output."\n";
     }
 
     protected function formatSeparator(array $widths): string
@@ -103,10 +103,10 @@ class TableRenderer
         $output = '|';
 
         foreach ($widths as $width) {
-            $output .= str_repeat('-', $width + 2) . '|';
+            $output .= str_repeat('-', $width + 2).'|';
         }
 
-        return $output . "\n";
+        return $output."\n";
     }
 
     protected function formatPagination(int $currentPage, int $totalPages): string
@@ -148,6 +148,6 @@ class TableRenderer
             $pages[] = '[Next >]';
         }
 
-        return $output . implode(' ', $pages);
+        return $output.implode(' ', $pages);
     }
 }

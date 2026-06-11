@@ -4,9 +4,9 @@ namespace Repat\CliCrud\Commands;
 
 use Illuminate\Console\Command;
 use Illuminate\Database\Eloquent\Model;
-use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Support\Collection;
 use Repat\CliCrud\Authorization\Authorizer;
+use Repat\CliCrud\Fields\Relations\BelongsTo;
 use Repat\CliCrud\Fields\Relations\Relation;
 use Repat\CliCrud\Forms\FormBuilder;
 use Repat\CliCrud\Resources\Resource;
@@ -15,17 +15,20 @@ use Repat\CliCrud\Tables\TableRenderer;
 
 use function Laravel\Prompts\confirm;
 use function Laravel\Prompts\datatable;
-use function Laravel\Prompts\menu;
 use function Laravel\Prompts\select;
 
 class CrudCommand extends Command
 {
     protected $signature = 'cli-crud';
+
     protected $description = 'Interactive CLI CRUD admin panel';
 
     protected ResourceRegistrar $registrar;
+
     protected Authorizer $authorizer;
+
     protected TableRenderer $tableRenderer;
+
     protected FormBuilder $formBuilder;
 
     public function __construct(
@@ -47,6 +50,7 @@ class CrudCommand extends Command
 
         if (empty($resources)) {
             $this->error('No resources available or you are not authorized to view any resources.');
+
             return self::FAILURE;
         }
 
@@ -61,7 +65,7 @@ class CrudCommand extends Command
         $authorized = [];
 
         foreach ($resources as $resource) {
-            if ($this->authorizer->viewAny(new $resource())) {
+            if ($this->authorizer->viewAny(new $resource)) {
                 $authorized[] = $resource;
             }
         }
@@ -91,7 +95,7 @@ class CrudCommand extends Command
 
     protected function showResourceMenu(string $resourceClass): void
     {
-        $resource = new $resourceClass();
+        $resource = new $resourceClass;
 
         $options = [
             'list' => "List {$resource::getLabel()}",
@@ -115,7 +119,7 @@ class CrudCommand extends Command
 
     protected function showListView(string $resourceClass, int $page, bool $showTrashed = false): void
     {
-        $resource = new $resourceClass();
+        $resource = new $resourceClass;
         $modelClass = $resource::getModel();
         $query = $modelClass::query();
 
@@ -137,6 +141,7 @@ class CrudCommand extends Command
 
         if ($items->isEmpty()) {
             $this->showResourceMenu($resourceClass);
+
             return;
         }
 
@@ -145,10 +150,10 @@ class CrudCommand extends Command
 
     protected function showListActions(string $resourceClass, Collection $items, int $page, int $totalPages, bool $showTrashed): void
     {
-        $resource = new $resourceClass();
+        $resource = new $resourceClass;
         $columns = $resource::tableColumns();
 
-        $headers = array_map(fn($col) => ucfirst(str_replace('_', ' ', $col)), $columns);
+        $headers = array_map(fn ($col) => ucfirst(str_replace('_', ' ', $col)), $columns);
 
         $rows = [];
         foreach ($items as $index => $item) {
@@ -169,6 +174,7 @@ class CrudCommand extends Command
 
         if ($selectedIndex === null) {
             $this->showResourceMenu($resourceClass);
+
             return;
         }
 
@@ -178,7 +184,7 @@ class CrudCommand extends Command
 
     protected function showRecordActionMenu(string $resourceClass, Model $item, int $page, int $totalPages, bool $showTrashed): void
     {
-        $resource = new $resourceClass();
+        $resource = new $resourceClass;
         $options = [];
 
         $options['view'] = 'View details';
@@ -224,46 +230,54 @@ class CrudCommand extends Command
         if ($action === 'view') {
             $this->showDetailView($resourceClass, $item);
             $this->showListView($resourceClass, $page, $showTrashed);
+
             return;
         }
 
         if ($action === 'delete') {
             $this->deleteModel($resourceClass, $item);
             $this->showListView($resourceClass, $page, $showTrashed);
+
             return;
         }
 
         if ($action === 'restore') {
             $this->restoreModel($resourceClass, $item);
             $this->showListView($resourceClass, $page, $showTrashed);
+
             return;
         }
 
         if ($action === 'force_delete') {
             $this->forceDeleteModel($resourceClass, $item);
             $this->showListView($resourceClass, $page, $showTrashed);
+
             return;
         }
 
         if ($action === 'create') {
             $this->showCreateForm($resourceClass);
             $this->showListView($resourceClass, $page, $showTrashed);
+
             return;
         }
 
         if ($action === 'toggle_trashed') {
-            $this->showListView($resourceClass, 1, !$showTrashed);
+            $this->showListView($resourceClass, 1, ! $showTrashed);
+
             return;
         }
 
         if ($action === 'page') {
             $newPage = $this->askForPageNumber($totalPages);
             $this->showListView($resourceClass, $newPage, $showTrashed);
+
             return;
         }
 
         if ($action === 'back') {
             $this->showResourceMenu($resourceClass);
+
             return;
         }
 
@@ -292,12 +306,13 @@ class CrudCommand extends Command
     protected function askForPageNumber(int $totalPages): int
     {
         $page = (int) $this->ask("Enter page number (1-{$totalPages})", 1);
+
         return max(1, min($page, $totalPages));
     }
 
     protected function showDetailView(string $resourceClass, Model $model): void
     {
-        $resource = new $resourceClass();
+        $resource = new $resourceClass;
 
         $this->info("\n{$resource::getSingularLabel()} #{$model->getKey()}\n");
 
@@ -361,7 +376,7 @@ class CrudCommand extends Command
 
     protected function showDetailActions(string $resourceClass, Model $model): void
     {
-        $resource = new $resourceClass();
+        $resource = new $resourceClass;
         $options = [];
 
         $isTrashed = $resource::usesSoftDeletes() && $model->trashed();
@@ -403,11 +418,12 @@ class CrudCommand extends Command
 
     protected function showCreateForm(string $resourceClass): void
     {
-        $resource = new $resourceClass();
+        $resource = new $resourceClass;
 
-        if (!$this->authorizer->create($resource)) {
+        if (! $this->authorizer->create($resource)) {
             $this->error('You are not authorized to create this resource.');
             $this->showResourceMenu($resourceClass);
+
             return;
         }
 
@@ -416,7 +432,7 @@ class CrudCommand extends Command
         $fields = $resource::getFields();
         $relations = $resource::getRelations();
 
-        $belongsToRelations = array_filter($relations, fn($r) => $r instanceof \Repat\CliCrud\Fields\Relations\BelongsTo);
+        $belongsToRelations = array_filter($relations, fn ($r) => $r instanceof BelongsTo);
 
         $allFields = array_merge($fields, $belongsToRelations);
 
@@ -435,10 +451,11 @@ class CrudCommand extends Command
 
     protected function deleteModel(string $resourceClass, Model $model): void
     {
-        $resource = new $resourceClass();
+        $resource = new $resourceClass;
 
-        if (!$this->authorizer->delete($resource, $model)) {
+        if (! $this->authorizer->delete($resource, $model)) {
             $this->error('You are not authorized to delete this resource.');
+
             return;
         }
 
@@ -450,10 +467,11 @@ class CrudCommand extends Command
 
     protected function forceDeleteModel(string $resourceClass, Model $model): void
     {
-        $resource = new $resourceClass();
+        $resource = new $resourceClass;
 
-        if (!$this->authorizer->forceDelete($resource, $model)) {
+        if (! $this->authorizer->forceDelete($resource, $model)) {
             $this->error('You are not authorized to force delete this resource.');
+
             return;
         }
 
@@ -465,10 +483,11 @@ class CrudCommand extends Command
 
     protected function restoreModel(string $resourceClass, Model $model): void
     {
-        $resource = new $resourceClass();
+        $resource = new $resourceClass;
 
-        if (!$this->authorizer->restore($resource, $model)) {
+        if (! $this->authorizer->restore($resource, $model)) {
             $this->error('You are not authorized to restore this resource.');
+
             return;
         }
 
@@ -482,7 +501,7 @@ class CrudCommand extends Command
     {
         $fields = $resource::getFields();
 
-        if (!empty($fields)) {
+        if (! empty($fields)) {
             $firstField = $fields[0];
             $value = $item->{$firstField->getName()};
             if ($value) {

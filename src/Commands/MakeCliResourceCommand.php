@@ -9,6 +9,7 @@ use Illuminate\Support\Str;
 class MakeCliResourceCommand extends Command
 {
     protected $signature = 'make:cli-resource {name : The name of the resource}';
+
     protected $description = 'Create a new CLI CRUD resource class';
 
     public function handle(Filesystem $files): int
@@ -16,7 +17,7 @@ class MakeCliResourceCommand extends Command
         $name = $this->argument('name');
         $className = Str::studly($name);
 
-        if (!Str::endsWith($className, 'Resource')) {
+        if (! Str::endsWith($className, 'Resource')) {
             $className .= 'Resource';
         }
 
@@ -24,6 +25,7 @@ class MakeCliResourceCommand extends Command
 
         if ($files->exists($path)) {
             $this->error("Resource [{$className}] already exists!");
+
             return self::FAILURE;
         }
 
@@ -40,7 +42,7 @@ class MakeCliResourceCommand extends Command
     {
         $path = config('cli-crud.resources.path', app_path('CliCrud/Resources'));
 
-        return $path . DIRECTORY_SEPARATOR . $className . '.php';
+        return $path.DIRECTORY_SEPARATOR.$className.'.php';
     }
 
     protected function buildClass(string $className): string
@@ -68,6 +70,6 @@ class MakeCliResourceCommand extends Command
             return file_get_contents($customStub);
         }
 
-        return file_get_contents(__DIR__ . '/../../stubs/cli-resource.stub');
+        return file_get_contents(__DIR__.'/../../stubs/cli-resource.stub');
     }
 }

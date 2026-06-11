@@ -5,10 +5,15 @@ namespace Repat\CliCrud\Fields;
 abstract class Field
 {
     protected string $name;
+
     protected ?string $label = null;
+
     protected bool $required = false;
+
     protected bool $nullable = false;
+
     protected mixed $default = null;
+
     protected array $rules = [];
 
     public function __construct(string $name)
@@ -24,30 +29,35 @@ abstract class Field
     public function label(string $label): static
     {
         $this->label = $label;
+
         return $this;
     }
 
     public function required(): static
     {
         $this->required = true;
+
         return $this;
     }
 
     public function nullable(): static
     {
         $this->nullable = true;
+
         return $this;
     }
 
     public function default(mixed $value): static
     {
         $this->default = $value;
+
         return $this;
     }
 
     public function rules(array $rules): static
     {
         $this->rules = $rules;
+
         return $this;
     }
 

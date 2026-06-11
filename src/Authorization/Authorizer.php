@@ -18,17 +18,17 @@ class Authorizer
 
     public function viewAny(Resource $resource): bool
     {
-        if (!$this->enabled) {
+        if (! $this->enabled) {
             return true;
         }
 
-        if (!$this->hasAuthenticatedUser()) {
+        if (! $this->hasAuthenticatedUser()) {
             return true;
         }
 
         $modelClass = $resource::getModel();
 
-        if (!$this->hasPolicy($modelClass)) {
+        if (! $this->hasPolicy($modelClass)) {
             return true;
         }
 
@@ -41,15 +41,15 @@ class Authorizer
 
     public function view(Resource $resource, Model $model): bool
     {
-        if (!$this->enabled) {
+        if (! $this->enabled) {
             return true;
         }
 
-        if (!$this->hasAuthenticatedUser()) {
+        if (! $this->hasAuthenticatedUser()) {
             return true;
         }
 
-        if (!$this->hasPolicy(get_class($model))) {
+        if (! $this->hasPolicy(get_class($model))) {
             return true;
         }
 
@@ -62,17 +62,17 @@ class Authorizer
 
     public function create(Resource $resource): bool
     {
-        if (!$this->enabled) {
+        if (! $this->enabled) {
             return true;
         }
 
-        if (!$this->hasAuthenticatedUser()) {
+        if (! $this->hasAuthenticatedUser()) {
             return true;
         }
 
         $modelClass = $resource::getModel();
 
-        if (!$this->hasPolicy($modelClass)) {
+        if (! $this->hasPolicy($modelClass)) {
             return true;
         }
 
@@ -85,15 +85,15 @@ class Authorizer
 
     public function delete(Resource $resource, Model $model): bool
     {
-        if (!$this->enabled) {
+        if (! $this->enabled) {
             return true;
         }
 
-        if (!$this->hasAuthenticatedUser()) {
+        if (! $this->hasAuthenticatedUser()) {
             return true;
         }
 
-        if (!$this->hasPolicy(get_class($model))) {
+        if (! $this->hasPolicy(get_class($model))) {
             return true;
         }
 
@@ -106,15 +106,15 @@ class Authorizer
 
     public function forceDelete(Resource $resource, Model $model): bool
     {
-        if (!$this->enabled) {
+        if (! $this->enabled) {
             return true;
         }
 
-        if (!$this->hasAuthenticatedUser()) {
+        if (! $this->hasAuthenticatedUser()) {
             return true;
         }
 
-        if (!$this->hasPolicy(get_class($model))) {
+        if (! $this->hasPolicy(get_class($model))) {
             return true;
         }
 
@@ -127,15 +127,15 @@ class Authorizer
 
     public function restore(Resource $resource, Model $model): bool
     {
-        if (!$this->enabled) {
+        if (! $this->enabled) {
             return true;
         }
 
-        if (!$this->hasAuthenticatedUser()) {
+        if (! $this->hasAuthenticatedUser()) {
             return true;
         }
 
-        if (!$this->hasPolicy(get_class($model))) {
+        if (! $this->hasPolicy(get_class($model))) {
             return true;
         }
 
@@ -148,42 +148,42 @@ class Authorizer
 
     public function authorizeViewAny(Resource $resource): void
     {
-        if (!$this->viewAny($resource)) {
+        if (! $this->viewAny($resource)) {
             throw UnauthorizedException::forAction('viewAny', $resource::getModel());
         }
     }
 
     public function authorizeView(Resource $resource, Model $model): void
     {
-        if (!$this->view($resource, $model)) {
+        if (! $this->view($resource, $model)) {
             throw UnauthorizedException::forAction('view', get_class($model));
         }
     }
 
     public function authorizeCreate(Resource $resource): void
     {
-        if (!$this->create($resource)) {
+        if (! $this->create($resource)) {
             throw UnauthorizedException::forAction('create', $resource::getModel());
         }
     }
 
     public function authorizeDelete(Resource $resource, Model $model): void
     {
-        if (!$this->delete($resource, $model)) {
+        if (! $this->delete($resource, $model)) {
             throw UnauthorizedException::forAction('delete', get_class($model));
         }
     }
 
     public function authorizeForceDelete(Resource $resource, Model $model): void
     {
-        if (!$this->forceDelete($resource, $model)) {
+        if (! $this->forceDelete($resource, $model)) {
             throw UnauthorizedException::forAction('forceDelete', get_class($model));
         }
     }
 
     public function authorizeRestore(Resource $resource, Model $model): void
     {
-        if (!$this->restore($resource, $model)) {
+        if (! $this->restore($resource, $model)) {
             throw UnauthorizedException::forAction('restore', get_class($model));
         }
     }
@@ -192,6 +192,7 @@ class Authorizer
     {
         try {
             $policy = Gate::getPolicyFor($modelClass);
+
             return $policy !== null;
         } catch (\Exception $e) {
             return false;

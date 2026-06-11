@@ -10,7 +10,9 @@ use Repat\CliCrud\Fields\Relations\Relation;
 abstract class Resource
 {
     protected static string $model;
+
     protected static string $label;
+
     protected static string $singularLabel;
 
     /**
@@ -31,7 +33,8 @@ abstract class Resource
     public static function getModelInstance(): Model
     {
         $modelClass = static::$model;
-        return new $modelClass();
+
+        return new $modelClass;
     }
 
     public static function getLabel(): string
@@ -49,7 +52,7 @@ abstract class Resource
      */
     public static function getFields(): array
     {
-        return array_filter(static::fields(), fn($field) => $field instanceof Field);
+        return array_filter(static::fields(), fn ($field) => $field instanceof Field);
     }
 
     /**
@@ -57,7 +60,7 @@ abstract class Resource
      */
     public static function getRelations(): array
     {
-        return array_filter(static::fields(), fn($field) => $field instanceof Relation);
+        return array_filter(static::fields(), fn ($field) => $field instanceof Relation);
     }
 
     public static function usesSoftDeletes(): bool

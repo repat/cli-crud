@@ -15,7 +15,7 @@ class AuthorizerTest extends TestCase
     public function test_allows_all_actions_when_disabled(): void
     {
         $authorizer = new Authorizer(false);
-        $resource = new UserResource();
+        $resource = new UserResource;
 
         $this->assertTrue($authorizer->viewAny($resource));
         $this->assertTrue($authorizer->create($resource));
@@ -28,7 +28,7 @@ class AuthorizerTest extends TestCase
     public function test_allows_all_actions_when_no_policy_exists(): void
     {
         $authorizer = new Authorizer(true);
-        $resource = new UserResource();
+        $resource = new UserResource;
 
         $this->assertTrue($authorizer->viewAny($resource));
         $this->assertTrue($authorizer->create($resource));
@@ -46,7 +46,7 @@ class AuthorizerTest extends TestCase
         $this->actingAs($user);
 
         $authorizer = new Authorizer(true);
-        $resource = new UserResource();
+        $resource = new UserResource;
 
         $this->assertFalse($authorizer->viewAny($resource));
         $this->assertFalse($authorizer->create($resource));
@@ -63,7 +63,7 @@ class AuthorizerTest extends TestCase
         $this->actingAs($user);
 
         $authorizer = new Authorizer(true);
-        $resource = new UserResource();
+        $resource = new UserResource;
 
         $this->expectException(UnauthorizedException::class);
         $authorizer->authorizeViewAny($resource);

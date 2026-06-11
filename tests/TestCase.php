@@ -23,12 +23,12 @@ abstract class TestCase extends BaseTestCase
             'prefix' => '',
         ]);
 
-        $app['config']->set('cli-crud.resources.path', __DIR__ . '/Fixtures/Resources');
+        $app['config']->set('cli-crud.resources.path', __DIR__.'/Fixtures/Resources');
         $app['config']->set('cli-crud.resources.namespace', 'Repat\\CliCrud\\Tests\\Fixtures\\Resources');
     }
 
     protected function defineDatabaseMigrations(): void
     {
-        $this->loadMigrationsFrom(__DIR__ . '/Fixtures/database/migrations');
+        $this->loadMigrationsFrom(__DIR__.'/Fixtures/database/migrations');
     }
 }

@@ -9,6 +9,7 @@ class Select extends Field
     public function options(array $options): static
     {
         $this->options = $options;
+
         return $this;
     }
 
@@ -28,8 +29,8 @@ class Select extends Field
     {
         $rules = parent::getRules();
 
-        if (!empty($this->options)) {
-            $rules[] = 'in:' . implode(',', array_keys($this->options));
+        if (! empty($this->options)) {
+            $rules[] = 'in:'.implode(',', array_keys($this->options));
         }
 
         return $rules;

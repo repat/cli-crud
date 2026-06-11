@@ -9,6 +9,7 @@ class BelongsTo extends Relation
     public function displayField(string $field): static
     {
         $this->displayField = $field;
+
         return $this;
     }
 
