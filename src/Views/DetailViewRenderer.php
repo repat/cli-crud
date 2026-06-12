@@ -176,7 +176,7 @@ class DetailViewRenderer
         }
 
         $relatedResource = $relation->getResource();
-        $relationLabel = ucfirst($relation->getName());
+        $relationLabel = $relation->getLabel();
         $columns = $relatedResource::tableColumns();
 
         $perPage = config('cli-crud.pagination.relation_per_page', 10);
