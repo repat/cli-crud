@@ -2,6 +2,7 @@
 
 namespace Repat\CliCrud;
 
+use Illuminate\Contracts\Support\DeferrableProvider;
 use Illuminate\Support\ServiceProvider;
 use Repat\CliCrud\Authorization\Authorizer;
 use Repat\CliCrud\Commands\CrudCommand;
@@ -12,7 +13,7 @@ use Repat\CliCrud\Tables\TableRenderer;
 use Repat\CliCrud\Validation\FieldValidator;
 use Repat\CliCrud\Views\DetailViewRenderer;
 
-class CliCrudServiceProvider extends ServiceProvider
+class CliCrudServiceProvider extends ServiceProvider implements DeferrableProvider
 {
     public function register(): void
     {
@@ -64,5 +65,17 @@ class CliCrudServiceProvider extends ServiceProvider
                 MakeCliResourceCommand::class,
             ]);
         }
+    }
+
+    public function provides(): array
+    {
+        return [
+            ResourceRegistrar::class,
+            Authorizer::class,
+            TableRenderer::class,
+            FormBuilder::class,
+            FieldValidator::class,
+            DetailViewRenderer::class,
+        ];
     }
 }
