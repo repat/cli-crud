@@ -73,11 +73,11 @@ class UserResource extends Resource
     public static function fields(): array
     {
         return [
-            Text::make('Name', 'name')->required(),
-            Text::make('Email', 'email')->required()->email(),
-            Boolean::make('Is Active', 'is_active')->default(true),
-            DateTime::make('Email Verified At', 'email_verified_at')->nullable(),
-            HasMany::make('Posts', 'posts', PostResource::class),
+            Text::make('Name')->required(),
+            Text::make('Email')->required()->email(),
+            Boolean::make('Is Active')->default(true),
+            DateTime::make('Email Verified At')->nullable(),
+            HasMany::make('Posts', PostResource::class),
         ];
     }
 
@@ -104,47 +104,47 @@ This opens an interactive menu where you can:
 
 ## Field Types
 
-All field types use the signature `Field::make(string $label, string $name)` where `$label` is the display name and `$name` is the database column name.
+All field types use the signature `Field::make(string $label, ?string $name = null)` where `$label` is the display name and `$name` is the optional database column name. If `$name` is omitted, it will be automatically derived from the label (e.g., `'First Name'` → `'first_name'`, `'firstName'` → `'first_name'`).
 
 ### Scalar Fields
 
-- `Text::make('Name', 'name')` - Text input
+- `Text::make('Name')` or `Text::make('Name', 'name')` - Text input
   - `->email()` - Email validation
   - `->required()` - Required field
   - `->nullable()` - Nullable field
   - `->default('value')` - Default value
   - `->rules(['string', 'max:255'])` - Custom validation rules
 
-- `Number::make('Age', 'age')` - Numeric input
+- `Number::make('Age')` or `Number::make('Age', 'age')` - Numeric input
   - `->float()` - Allow float values
   - `->required()`, `->nullable()`, `->default()`, `->rules()`
 
-- `Boolean::make('Is Active', 'is_active')` - Yes/No confirmation
+- `Boolean::make('Is Active')` or `Boolean::make('Is Active', 'is_active')` - Yes/No confirmation
   - `->default(true)`, `->rules()`
 
-- `DateTime::make('Created At', 'created_at')` - Date/time input
+- `DateTime::make('Created At')` or `DateTime::make('Created At', 'created_at')` - Date/time input
   - `->format('Y-m-d H:i:s')` - Custom format
   - `->required()`, `->nullable()`, `->default()`, `->rules()`
 
-- `Select::make('Status', 'status')` - Dropdown selection
+- `Select::make('Status')` or `Select::make('Status', 'status')` - Dropdown selection
   - `->options(['active' => 'Active', 'inactive' => 'Inactive'])`
   - `->required()`, `->nullable()`, `->default()`, `->rules()`
 
-- `Textarea::make('Content', 'content')` - Multi-line text input
+- `Textarea::make('Content')` or `Textarea::make('Content', 'content')` - Multi-line text input
   - `->required()`, `->nullable()`, `->default()`, `->rules()`
 
 ### Relations
 
-All relation types use the signature `Relation::make(string $label, string $name, string $resourceClass)` where `$label` is the display name, `$name` is the relationship method name on the model, and `$resourceClass` is the related resource class.
+All relation types use the signature `Relation::make(string $label, string $resourceClass)` or `Relation::make(string $label, string $name, string $resourceClass)` where `$label` is the display name, `$name` is the optional relationship method name on the model, and `$resourceClass` is the related resource class. If `$name` is omitted, it will be automatically derived from the label.
 
-- `BelongsTo::make('User', 'user', UserResource::class)` - Belongs to relationship
+- `BelongsTo::make('User', UserResource::class)` or `BelongsTo::make('User', 'user', UserResource::class)` - Belongs to relationship
   - `->displayField('name')` - Field to display in selection
   - Uses inline search for large datasets
 
-- `HasOne::make('Profile', 'profile', ProfileResource::class)` - Has one relationship
+- `HasOne::make('Profile', ProfileResource::class)` or `HasOne::make('Profile', 'profile', ProfileResource::class)` - Has one relationship
   - Displayed as sub-table in detail view
 
-- `HasMany::make('Posts', 'posts', PostResource::class)` - Has many relationship
+- `HasMany::make('Posts', PostResource::class)` or `HasMany::make('Posts', 'posts', PostResource::class)` - Has many relationship
   - Displayed as paginated sub-table in detail view
 
 ## Authorization

@@ -11,6 +11,7 @@ use Repat\CliCrud\Forms\FormBuilder;
 use Repat\CliCrud\Resources\Resource;
 use Repat\CliCrud\Resources\ResourceRegistrar;
 use Repat\CliCrud\Tables\TableRenderer;
+use Repat\CliCrud\Views\AsciiArt;
 use Repat\CliCrud\Views\DetailViewRenderer;
 
 use function Laravel\Prompts\confirm;
@@ -50,6 +51,9 @@ class CrudCommand extends Command
 
     public function handle(): int
     {
+        $this->line(AsciiArt::render(config('app.name')));
+        $this->line('');
+
         $resources = $this->getAuthorizedResources();
 
         if (empty($resources)) {
@@ -333,6 +337,8 @@ class CrudCommand extends Command
         $resource = new $resourceClass;
         $options = [];
 
+        $options['back'] = 'Back to list';
+
         $isTrashed = $resource::usesSoftDeletes() && $model->trashed();
 
         if ($isTrashed) {
@@ -348,7 +354,6 @@ class CrudCommand extends Command
             }
         }
 
-        $options['back'] = 'Back to list';
         $options['quit'] = 'Quit';
 
         $action = select(

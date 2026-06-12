@@ -2,8 +2,12 @@
 
 namespace Repat\CliCrud\Fields;
 
+use Repat\CliCrud\Concerns\DerivesName;
+
 abstract class Field
 {
+    use DerivesName;
+
     protected string $name;
 
     protected ?string $label = null;
@@ -16,13 +20,13 @@ abstract class Field
 
     protected array $rules = [];
 
-    public function __construct(string $label, string $name)
+    public function __construct(string $label, ?string $name = null)
     {
         $this->label = $label;
-        $this->name = $name;
+        $this->name = $name ?? $this->deriveName($label);
     }
 
-    public static function make(string $label, string $name): static
+    public static function make(string $label, ?string $name = null): static
     {
         return new static($label, $name);
     }

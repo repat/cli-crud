@@ -139,4 +139,34 @@ class FieldTest extends TestCase
         $this->assertContains('string', $rules);
         $this->assertContains('max:255', $rules);
     }
+
+    public function test_field_with_one_arg_derives_name(): void
+    {
+        $field = Text::make('First Name');
+
+        $this->assertEquals('first_name', $field->getName());
+        $this->assertEquals('First Name', $field->getLabel());
+    }
+
+    public function test_field_with_two_args_uses_explicit_name(): void
+    {
+        $field = Text::make('Full Name', 'custom_column');
+
+        $this->assertEquals('custom_column', $field->getName());
+        $this->assertEquals('Full Name', $field->getLabel());
+    }
+
+    public function test_field_derives_name_from_camel_case(): void
+    {
+        $field = Text::make('firstName');
+
+        $this->assertEquals('first_name', $field->getName());
+    }
+
+    public function test_field_derives_name_with_special_chars(): void
+    {
+        $field = Text::make("User's Name");
+
+        $this->assertEquals('users_name', $field->getName());
+    }
 }

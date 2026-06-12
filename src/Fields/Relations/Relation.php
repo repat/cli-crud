@@ -2,26 +2,35 @@
 
 namespace Repat\CliCrud\Fields\Relations;
 
+use Repat\CliCrud\Concerns\DerivesName;
 use Repat\CliCrud\Resources\Resource;
 
 abstract class Relation
 {
+    use DerivesName;
+
     protected string $label;
 
     protected string $name;
 
     protected string $resourceClass;
 
-    public function __construct(string $label, string $name, string $resourceClass)
+    public function __construct(string $label, string $nameOrResource, ?string $resourceClass = null)
     {
         $this->label = $label;
-        $this->name = $name;
-        $this->resourceClass = $resourceClass;
+
+        if ($resourceClass === null) {
+            $this->resourceClass = $nameOrResource;
+            $this->name = $this->deriveName($label);
+        } else {
+            $this->name = $nameOrResource;
+            $this->resourceClass = $resourceClass;
+        }
     }
 
-    public static function make(string $label, string $name, string $resourceClass): static
+    public static function make(string $label, string $nameOrResource, ?string $resourceClass = null): static
     {
-        return new static($label, $name, $resourceClass);
+        return new static($label, $nameOrResource, $resourceClass);
     }
 
     public function getLabel(): string
