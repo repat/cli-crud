@@ -19,6 +19,11 @@ class UserPolicy
         return false;
     }
 
+    public function update($user, $model): bool
+    {
+        return false;
+    }
+
     public function delete($user, $model): bool
     {
         return false;

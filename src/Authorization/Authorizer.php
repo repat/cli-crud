@@ -83,6 +83,27 @@ class Authorizer
         }
     }
 
+    public function update(Resource $resource, Model $model): bool
+    {
+        if (! $this->enabled) {
+            return true;
+        }
+
+        if (! $this->hasAuthenticatedUser()) {
+            return true;
+        }
+
+        if (! $this->hasPolicy(get_class($model))) {
+            return true;
+        }
+
+        try {
+            return Gate::allows('update', $model);
+        } catch (\Exception $e) {
+            return true;
+        }
+    }
+
     public function delete(Resource $resource, Model $model): bool
     {
         if (! $this->enabled) {
@@ -164,6 +185,13 @@ class Authorizer
     {
         if (! $this->create($resource)) {
             throw UnauthorizedException::forAction('create', $resource::getModel());
+        }
+    }
+
+    public function authorizeUpdate(Resource $resource, Model $model): void
+    {
+        if (! $this->update($resource, $model)) {
+            throw UnauthorizedException::forAction('update', get_class($model));
         }
     }
 

@@ -34,7 +34,8 @@ class FormBuilder
             $data = [];
 
             foreach ($fields as $field) {
-                $value = $this->promptForField($field, $data[$field->getName()] ?? null, $errors[$field->getName()] ?? null);
+                $currentValue = $data[$field->getName()] ?? ($model ? $model->{$field->getName()} : null);
+                $value = $this->promptForField($field, $currentValue, $errors[$field->getName()] ?? null);
                 $data[$field->getName()] = $value;
             }
 
@@ -171,6 +172,13 @@ class FormBuilder
         $resource = $field->getResource();
         $relatedModel = $resource::getModel();
         $displayField = $field->getDisplayField() ?? $this->guessDisplayField($relatedModel);
+
+        if ($currentValue) {
+            $currentModel = $relatedModel::find($currentValue);
+            if ($currentModel) {
+                $label .= " <fg=gray>(currently: {$currentModel->{$displayField}})</>";
+            }
+        }
 
         return search(
             label: $label,

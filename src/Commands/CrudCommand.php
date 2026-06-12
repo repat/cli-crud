@@ -194,6 +194,10 @@ class CrudCommand extends Command
 
         $options['view'] = 'View details';
 
+        if ($this->authorizer->update($resource, $item)) {
+            $options['edit'] = 'Edit';
+        }
+
         $isTrashed = $resource::usesSoftDeletes() && $item->trashed();
 
         if ($isTrashed) {
@@ -234,6 +238,13 @@ class CrudCommand extends Command
     {
         if ($action === 'view') {
             $this->showDetailView($resourceClass, $item);
+            $this->showListView($resourceClass, $page, $showTrashed);
+
+            return;
+        }
+
+        if ($action === 'edit') {
+            $this->showEditForm($resourceClass, $item);
             $this->showListView($resourceClass, $page, $showTrashed);
 
             return;
@@ -339,6 +350,10 @@ class CrudCommand extends Command
 
         $options['back'] = 'Back to list';
 
+        if ($this->authorizer->update($resource, $model)) {
+            $options['edit'] = 'Edit';
+        }
+
         $isTrashed = $resource::usesSoftDeletes() && $model->trashed();
 
         if ($isTrashed) {
@@ -363,6 +378,12 @@ class CrudCommand extends Command
 
         if ($action === 'quit') {
             exit(0);
+        }
+
+        if ($action === 'edit') {
+            $this->showEditForm($resourceClass, $model);
+
+            return;
         }
 
         match ($action) {
@@ -406,6 +427,36 @@ class CrudCommand extends Command
         } else {
             $this->showResourceMenu($resourceClass);
         }
+    }
+
+    protected function showEditForm(string $resourceClass, Model $model): void
+    {
+        $resource = new $resourceClass;
+
+        if (! $this->authorizer->update($resource, $model)) {
+            $this->error('You are not authorized to edit this resource.');
+
+            return;
+        }
+
+        $this->info("\nEdit {$resource::getSingularLabel()}\n");
+
+        $fields = $resource::getFields();
+        $relations = $resource::getRelations();
+
+        $belongsToRelations = array_filter($relations, fn ($r) => $r instanceof BelongsTo);
+
+        $allFields = array_merge($fields, $belongsToRelations);
+
+        $data = $this->formBuilder->build($allFields, $model);
+
+        if (confirm("Save changes to this {$resource::getSingularLabel()}?")) {
+            $model->update($data);
+
+            $this->info("{$resource::getSingularLabel()} updated successfully!");
+        }
+
+        $this->showDetailView($resourceClass, $model);
     }
 
     protected function deleteModel(string $resourceClass, Model $model): void

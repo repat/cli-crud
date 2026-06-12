@@ -22,6 +22,7 @@ class AuthorizerTest extends TestCase
 
         $user = User::create(['name' => 'Test', 'email' => 'test@example.com']);
         $this->assertTrue($authorizer->view($resource, $user));
+        $this->assertTrue($authorizer->update($resource, $user));
         $this->assertTrue($authorizer->delete($resource, $user));
     }
 
@@ -35,6 +36,7 @@ class AuthorizerTest extends TestCase
 
         $user = User::create(['name' => 'Test', 'email' => 'test@example.com']);
         $this->assertTrue($authorizer->view($resource, $user));
+        $this->assertTrue($authorizer->update($resource, $user));
         $this->assertTrue($authorizer->delete($resource, $user));
     }
 
@@ -52,6 +54,7 @@ class AuthorizerTest extends TestCase
         $this->assertFalse($authorizer->create($resource));
 
         $this->assertFalse($authorizer->view($resource, $user));
+        $this->assertFalse($authorizer->update($resource, $user));
         $this->assertFalse($authorizer->delete($resource, $user));
     }
 
