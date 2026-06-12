@@ -146,13 +146,13 @@ class DetailViewRenderer
 
     protected function renderTitle(string $title): void
     {
-        $paddedTitle = ' '.str_pad($title, $this->boxWidth - 4, ' ').' ';
+        $paddedTitle = ' '.$this->mb_str_pad($title, $this->boxWidth - 4, ' ').' ';
         $this->output(self::BOX['vertical'].$paddedTitle.self::BOX['vertical']);
     }
 
     protected function renderField(array $field): void
     {
-        $label = str_pad($field['label'], $this->labelWidth + self::LABEL_PADDING, ' ');
+        $label = $this->mb_str_pad($field['label'], $this->labelWidth + self::LABEL_PADDING, ' ');
         $formattedValue = $field['formatted'];
         $plainValue = $this->getPlainText($formattedValue);
 
@@ -163,22 +163,21 @@ class DetailViewRenderer
         }
 
         foreach ($lines as $index => $line) {
-            $paddedLine = str_pad($line, $this->valueWidth, ' ');
+            $paddedLine = $this->mb_str_pad($line, $this->valueWidth, ' ');
 
             if ($index === 0) {
                 $content = ' '.$label.$paddedLine.' ';
             } else {
-                $emptyLabel = str_pad('', $this->labelWidth + self::LABEL_PADDING, ' ');
+                $emptyLabel = $this->mb_str_pad('', $this->labelWidth + self::LABEL_PADDING, ' ');
                 $content = ' '.$emptyLabel.$paddedLine.' ';
             }
 
-            $content = str_pad($content, $this->boxWidth - 2, ' ');
+            $content = $this->mb_str_pad($content, $this->boxWidth - 2, ' ');
 
             if ($index === 0 && $this->hasAnsiCodes($formattedValue)) {
                 $ansiValue = $this->extractAnsiValue($formattedValue);
-                $emptyLabel = str_pad('', $this->labelWidth + self::LABEL_PADDING, ' ');
                 $content = ' '.$label.$ansiValue;
-                $remaining = $this->boxWidth - 2 - mb_strlen($label) - self::LABEL_PADDING - mb_strlen($this->getPlainText($ansiValue));
+                $remaining = $this->boxWidth - 4 - mb_strlen($label) - mb_strlen($this->getPlainText($ansiValue));
                 $content .= str_repeat(' ', max(0, $remaining));
                 $content .= ' ';
             }
@@ -285,11 +284,11 @@ class DetailViewRenderer
         $parts = [];
         foreach ($columns as $col) {
             $header = ColumnFormatter::format($col);
-            $parts[] = str_pad($header, $this->columnWidths[$col], ' ');
+            $parts[] = $this->mb_str_pad($header, $this->columnWidths[$col], ' ');
         }
 
         $content = ' '.implode('  ', $parts).' ';
-        $content = str_pad($content, $this->boxWidth - 2, ' ');
+        $content = $this->mb_str_pad($content, $this->boxWidth - 2, ' ');
 
         $this->output(self::BOX['vertical'].$content.self::BOX['vertical']);
     }
@@ -302,7 +301,7 @@ class DetailViewRenderer
         }
 
         $content = ' '.implode('  ', $parts).' ';
-        $content = str_pad($content, $this->boxWidth - 2, ' ');
+        $content = $this->mb_str_pad($content, $this->boxWidth - 2, ' ');
 
         $this->output(self::BOX['vertical'].$content.self::BOX['vertical']);
     }
@@ -318,11 +317,11 @@ class DetailViewRenderer
                 $formatted = mb_substr($formatted, 0, $this->columnWidths[$col] - 3).'...';
             }
 
-            $parts[] = str_pad($formatted, $this->columnWidths[$col], ' ');
+            $parts[] = $this->mb_str_pad($formatted, $this->columnWidths[$col], ' ');
         }
 
         $content = ' '.implode('  ', $parts).' ';
-        $content = str_pad($content, $this->boxWidth - 2, ' ');
+        $content = $this->mb_str_pad($content, $this->boxWidth - 2, ' ');
 
         $this->output(self::BOX['vertical'].$content.self::BOX['vertical']);
     }
@@ -461,6 +460,16 @@ class DetailViewRenderer
     protected function extractAnsiValue(string $text): string
     {
         return $text;
+    }
+
+    protected function mb_str_pad(string $input, int $length, string $pad_string = ' '): string
+    {
+        $pad_length = $length - mb_strlen($input);
+        if ($pad_length <= 0) {
+            return $input;
+        }
+
+        return $input.str_repeat($pad_string, $pad_length);
     }
 
     protected function output(string $text): void

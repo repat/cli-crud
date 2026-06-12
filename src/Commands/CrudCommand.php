@@ -463,7 +463,7 @@ class CrudCommand extends Command
 
         $allFields = array_merge($fields, $belongsToRelations);
 
-        $data = $this->formBuilder->build($allFields);
+        $data = $this->formBuilder->build($allFields, null, $resource);
 
         if (confirm("Save this {$resource::getSingularLabel()}?")) {
             $modelClass = $resource::getModel();
@@ -495,7 +495,7 @@ class CrudCommand extends Command
 
         $allFields = array_merge($fields, $belongsToRelations);
 
-        $data = $this->formBuilder->build($allFields, $model);
+        $data = $this->formBuilder->build($allFields, $model, $resource);
 
         // Preserve existing password if left empty during edit
         foreach ($fields as $field) {

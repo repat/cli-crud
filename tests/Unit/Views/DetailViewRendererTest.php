@@ -778,4 +778,142 @@ class DetailViewRendererTest extends TestCase
         $this->assertStringContainsString('John Doe', $output);
         $this->assertStringContainsString('╭', $output);
     }
+
+    public function test_mb_str_pad_with_ascii_characters(): void
+    {
+        $renderer = new class extends DetailViewRenderer
+        {
+            public function test_mb_str_pad(string $input, int $length, string $pad_string = ' '): string
+            {
+                return $this->mb_str_pad($input, $length, $pad_string);
+            }
+        };
+
+        $result = $renderer->test_mb_str_pad('Hello', 10);
+        $this->assertEquals('Hello     ', $result);
+        $this->assertEquals(10, mb_strlen($result));
+    }
+
+    public function test_mb_str_pad_with_multibyte_characters(): void
+    {
+        $renderer = new class extends DetailViewRenderer
+        {
+            public function test_mb_str_pad(string $input, int $length, string $pad_string = ' '): string
+            {
+                return $this->mb_str_pad($input, $length, $pad_string);
+            }
+        };
+
+        $result = $renderer->test_mb_str_pad('Geschäftsführung', 20);
+        $this->assertEquals(20, mb_strlen($result));
+        $this->assertStringStartsWith('Geschäftsführung', $result);
+    }
+
+    public function test_mb_str_pad_with_string_already_at_length(): void
+    {
+        $renderer = new class extends DetailViewRenderer
+        {
+            public function test_mb_str_pad(string $input, int $length, string $pad_string = ' '): string
+            {
+                return $this->mb_str_pad($input, $length, $pad_string);
+            }
+        };
+
+        $result = $renderer->test_mb_str_pad('Hello', 5);
+        $this->assertEquals('Hello', $result);
+    }
+
+    public function test_mb_str_pad_with_string_longer_than_length(): void
+    {
+        $renderer = new class extends DetailViewRenderer
+        {
+            public function test_mb_str_pad(string $input, int $length, string $pad_string = ' '): string
+            {
+                return $this->mb_str_pad($input, $length, $pad_string);
+            }
+        };
+
+        $result = $renderer->test_mb_str_pad('Hello World', 5);
+        $this->assertEquals('Hello World', $result);
+    }
+
+    public function test_mb_str_pad_with_custom_pad_string(): void
+    {
+        $renderer = new class extends DetailViewRenderer
+        {
+            public function test_mb_str_pad(string $input, int $length, string $pad_string = ' '): string
+            {
+                return $this->mb_str_pad($input, $length, $pad_string);
+            }
+        };
+
+        $result = $renderer->test_mb_str_pad('Hi', 10, '-');
+        $this->assertEquals('Hi--------', $result);
+    }
+
+    public function test_rendering_with_multibyte_characters_aligns_borders(): void
+    {
+        $user = User::create([
+            'name' => 'Geschäftsführung',
+            'email' => 'test@example.com',
+            'is_active' => true,
+        ]);
+
+        ob_start();
+        $this->renderer->render($user, new UserResource);
+        $output = ob_get_clean();
+
+        $lines = explode("\n", trim($output));
+
+        $borderLines = array_filter($lines, fn ($line) => str_contains($line, '│'));
+
+        // Strip ANSI codes before measuring length
+        $lengths = array_map(fn ($line) => mb_strlen(preg_replace('/\e\[[0-9;]*m/', '', $line)), $borderLines);
+
+        $this->assertCount(1, array_unique($lengths), 'All border lines should have the same length');
+    }
+
+    public function test_rendering_with_multibyte_characters_in_title(): void
+    {
+        $user = User::create([
+            'name' => 'John Doe',
+            'email' => 'john@example.com',
+            'is_active' => true,
+        ]);
+
+        $resource = new class extends Resource
+        {
+            protected static string $model = User::class;
+
+            protected static string $label = 'Benutzer';
+
+            protected static string $singularLabel = 'Benutzer';
+
+            public static function fields(): array
+            {
+                return [
+                    Text::make('Name', 'name'),
+                    Text::make('Email', 'email'),
+                ];
+            }
+
+            public static function tableColumns(): array
+            {
+                return ['id', 'name', 'email'];
+            }
+        };
+
+        ob_start();
+        $this->renderer->render($user, $resource);
+        $output = ob_get_clean();
+
+        $lines = explode("\n", trim($output));
+
+        $borderLines = array_filter($lines, fn ($line) => str_contains($line, '│'));
+
+        // Strip ANSI codes before measuring length
+        $lengths = array_map(fn ($line) => mb_strlen(preg_replace('/\e\[[0-9;]*m/', '', $line)), $borderLines);
+
+        $this->assertCount(1, array_unique($lengths), 'All border lines should have the same length');
+    }
 }

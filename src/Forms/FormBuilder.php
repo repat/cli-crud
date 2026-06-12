@@ -13,6 +13,7 @@ use Repat\CliCrud\Fields\Relations\BelongsTo;
 use Repat\CliCrud\Fields\Select;
 use Repat\CliCrud\Fields\Text;
 use Repat\CliCrud\Fields\Textarea;
+use Repat\CliCrud\Resources\Resource;
 
 use function Laravel\Prompts\confirm;
 use function Laravel\Prompts\password;
@@ -26,8 +27,20 @@ class FormBuilder
     /**
      * @param  array<Field|BelongsTo>  $fields
      */
-    public function build(array $fields, ?Model $model = null): array
+    public function build(array $fields, ?Model $model = null, ?Resource $resource = null): array
     {
+        // Always ensure we have a model instance for relationship introspection
+        // For create scenarios, instantiate a new (unsaved) model from the resource
+        $introspectionModel = $model ?? $this->getIntrospectionModel($resource);
+
+        // Pre-compute foreign keys for all BelongsTo fields
+        $belongsToForeignKeys = [];
+        foreach ($fields as $field) {
+            if ($field instanceof BelongsTo) {
+                $belongsToForeignKeys[$field->getName()] = $field->getForeignKey($introspectionModel);
+            }
+        }
+
         $data = [];
         $errors = [];
 
@@ -35,12 +48,26 @@ class FormBuilder
             $data = [];
 
             foreach ($fields as $field) {
-                $currentValue = $data[$field->getName()] ?? ($model ? $model->{$field->getName()} : null);
-                $value = $this->promptForField($field, $currentValue, $errors[$field->getName()] ?? null);
-                $data[$field->getName()] = $value;
+                if ($field instanceof BelongsTo) {
+                    // Get the foreign key name
+                    $foreignKey = $belongsToForeignKeys[$field->getName()];
+
+                    // Load current value from foreign key column
+                    $currentValue = $data[$foreignKey] ?? ($model ? $model->{$foreignKey} : null);
+
+                    // Prompt for the relationship
+                    $value = $this->promptForBelongsTo($field, $currentValue, $errors[$foreignKey] ?? null);
+
+                    // Store using foreign key name
+                    $data[$foreignKey] = $value;
+                } else {
+                    $currentValue = $data[$field->getName()] ?? ($model ? $model->{$field->getName()} : null);
+                    $value = $this->promptForField($field, $currentValue, $errors[$field->getName()] ?? null);
+                    $data[$field->getName()] = $value;
+                }
             }
 
-            $validator = Validator::make($data, $this->buildValidationRules($fields));
+            $validator = Validator::make($data, $this->buildValidationRules($fields, $introspectionModel));
 
             if ($validator->fails()) {
                 $errors = $validator->errors()->toArray();
@@ -51,16 +78,24 @@ class FormBuilder
         return $data;
     }
 
-    protected function promptForField(Field|BelongsTo $field, mixed $currentValue = null, ?string $error = null): mixed
+    protected function getIntrospectionModel(?Resource $resource): ?Model
+    {
+        // For create scenarios, we need a model instance to introspect relationships
+        // Get it from the resource's model
+        if ($resource) {
+            return $resource::getModelInstance();
+        }
+
+        return null;
+    }
+
+    protected function promptForField(Field $field, mixed $currentValue = null, array|string|null $error = null): mixed
     {
         $label = $field->getLabel();
 
         if ($error) {
-            $label .= " <fg=red>({$error})</>";
-        }
-
-        if ($field instanceof BelongsTo) {
-            return $this->promptForBelongsTo($field, $label, $currentValue);
+            $errorText = is_array($error) ? implode(', ', $error) : $error;
+            $label .= " <fg=red>({$errorText})</>";
         }
 
         return match (true) {
@@ -199,15 +234,22 @@ class FormBuilder
         );
     }
 
-    protected function promptForBelongsTo(BelongsTo $field, string $label, mixed $currentValue): mixed
+    protected function promptForBelongsTo(BelongsTo $field, mixed $currentValue, array|string|null $error = null): mixed
     {
+        $label = $field->getLabel();
+
+        if ($error) {
+            $errorText = is_array($error) ? implode(', ', $error) : $error;
+            $label .= " <fg=red>({$errorText})</>";
+        }
+
         $resource = $field->getResource();
         $relatedModel = $resource::getModel();
         $displayField = $field->getDisplayField() ?? $this->guessDisplayField($relatedModel);
 
         if ($currentValue) {
             $currentModel = $relatedModel::find($currentValue);
-            if ($currentModel) {
+            if ($currentModel instanceof Model) {
                 $label .= " <fg=gray>(currently: {$currentModel->{$displayField}})</>";
             }
         }
@@ -240,13 +282,30 @@ class FormBuilder
     /**
      * @param  array<Field|BelongsTo>  $fields
      */
-    protected function buildValidationRules(array $fields): array
+    protected function buildValidationRules(array $fields, ?Model $introspectionModel = null): array
     {
         $rules = [];
 
         foreach ($fields as $field) {
             if ($field instanceof BelongsTo) {
-                $rules[$field->getName()] = ['required', 'exists:'.$field->getResource()::getModelInstance()->getTable().',id'];
+                // Always get foreign key from relationship (no fallback)
+                $foreignKey = $field->getForeignKey($introspectionModel);
+
+                // Build validation rules
+                $fieldRules = [];
+
+                // Add 'required' only if explicitly set
+                if ($field->isRequired()) {
+                    $fieldRules[] = 'required';
+                } else {
+                    $fieldRules[] = 'nullable';
+                }
+
+                // Add exists rule
+                $relatedTable = $field->getResource()::getModelInstance()->getTable();
+                $fieldRules[] = 'exists:'.$relatedTable.',id';
+
+                $rules[$foreignKey] = $fieldRules;
             } else {
                 $rules[$field->getName()] = $field->getRules();
             }
