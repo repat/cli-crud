@@ -19,14 +19,14 @@ class CliCrudServiceProvider extends ServiceProvider
         $this->mergeConfigFrom(__DIR__.'/../config/cli-crud.php', 'cli-crud');
 
         $this->app->singleton(ResourceRegistrar::class, function ($app) {
-            $path = config('cli-crud.resources.path');
-            $namespace = config('cli-crud.resources.namespace');
+            $path = (string) config('cli-crud.resources.path');
+            $namespace = (string) config('cli-crud.resources.namespace');
 
             return new ResourceRegistrar($path, $namespace);
         });
 
         $this->app->singleton(Authorizer::class, function ($app) {
-            $enabled = config('cli-crud.authorization.enabled', true);
+            $enabled = (bool) config('cli-crud.authorization.enabled', true);
 
             return new Authorizer($enabled);
         });

@@ -289,7 +289,7 @@ class DetailViewRendererTest extends TestCase
         $this->renderer->render($user, new UserResource);
         $output = ob_get_clean();
 
-        $this->assertStringContainsString('Id', $output);
+        $this->assertStringContainsString('ID', $output);
         $this->assertStringContainsString('Title', $output);
     }
 
@@ -325,5 +325,133 @@ class DetailViewRendererTest extends TestCase
         $lines = explode("\n", $output);
         $borderLine = $lines[0];
         $this->assertLessThanOrEqual(124, mb_strlen($borderLine));
+    }
+
+    public function test_separator_aligns_with_header(): void
+    {
+        $user = User::create([
+            'name' => 'John Doe',
+            'email' => 'john@example.com',
+            'is_active' => true,
+        ]);
+
+        Post::create([
+            'user_id' => $user->id,
+            'title' => 'Test Post',
+            'content' => 'Content',
+        ]);
+
+        ob_start();
+        $this->renderer->render($user, new UserResource);
+        $output = ob_get_clean();
+
+        $lines = explode("\n", $output);
+
+        // Find header and separator lines
+        $headerLine = null;
+        $separatorLine = null;
+        $dataLine = null;
+        foreach ($lines as $line) {
+            if (str_contains($line, 'ID') && str_contains($line, 'Title') && str_contains($line, '│')) {
+                $headerLine = $line;
+            }
+            // Separator line has dashes and spaces but NOT the top/bottom border chars
+            if (str_contains($line, '────') && ! str_contains($line, '╭') && ! str_contains($line, '╰')) {
+                $separatorLine = $line;
+            }
+            if (str_contains($line, 'Test Post')) {
+                $dataLine = $line;
+            }
+        }
+
+        // Verify both exist
+        $this->assertNotNull($headerLine, 'Header line should exist');
+        $this->assertNotNull($separatorLine, 'Separator line should exist');
+
+        // Verify same length (character-by-character alignment)
+        $this->assertEquals(
+            mb_strlen($headerLine),
+            mb_strlen($separatorLine),
+            'Header and separator must have identical length'
+        );
+
+        // Verify right border position
+        $this->assertEquals('│', mb_substr($headerLine, -1));
+        $this->assertEquals('│', mb_substr($separatorLine, -1));
+    }
+
+    public function test_separator_has_gaps_between_columns(): void
+    {
+        $user = User::create([
+            'name' => 'John Doe',
+            'email' => 'john@example.com',
+            'is_active' => true,
+        ]);
+
+        Post::create([
+            'user_id' => $user->id,
+            'title' => 'Test Post',
+            'content' => 'Content',
+        ]);
+
+        ob_start();
+        $this->renderer->render($user, new UserResource);
+        $output = ob_get_clean();
+
+        $lines = explode("\n", $output);
+
+        // Find separator line (has multiple groups of dashes separated by spaces)
+        $separatorLine = null;
+        foreach ($lines as $line) {
+            // Look for lines with the pattern: │ ──── ───── ───── │
+            // The line should have │ followed by space, then dashes, then spaces, then dashes
+            if (str_contains($line, '│') && str_contains($line, '────') && preg_match('/\s{2,}/', $line)) {
+                // Make sure it's not a border line
+                if (! str_contains($line, '╭') && ! str_contains($line, '╰') && ! str_contains($line, '├')) {
+                    $separatorLine = $line;
+                    break;
+                }
+            }
+        }
+
+        $this->assertNotNull($separatorLine, 'Separator line should exist');
+
+        // Verify it contains spaces (gaps) between dashes
+        $this->assertMatchesRegularExpression('/─+\s+─+/', $separatorLine);
+    }
+
+    public function test_relation_table_with_many_columns(): void
+    {
+        $user = User::create([
+            'name' => 'John Doe',
+            'email' => 'john@example.com',
+            'is_active' => true,
+        ]);
+
+        Post::create([
+            'user_id' => $user->id,
+            'title' => 'Test Post',
+            'content' => 'Content',
+        ]);
+
+        ob_start();
+        $this->renderer->render($user, new UserResource);
+        $output = ob_get_clean();
+
+        $lines = explode("\n", $output);
+
+        // Find header line
+        $headerLine = null;
+        foreach ($lines as $line) {
+            if (str_contains($line, 'ID') && str_contains($line, 'Title') && str_contains($line, 'Created at')) {
+                $headerLine = $line;
+                break;
+            }
+        }
+
+        $this->assertNotNull($headerLine, 'Header line with all columns should exist');
+
+        // Verify the line ends with the right border
+        $this->assertEquals('│', mb_substr($headerLine, -1));
     }
 }

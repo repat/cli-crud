@@ -7,9 +7,11 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Collection;
 use Repat\CliCrud\Authorization\Authorizer;
 use Repat\CliCrud\Fields\Relations\BelongsTo;
+use Repat\CliCrud\Fields\Text;
 use Repat\CliCrud\Forms\FormBuilder;
 use Repat\CliCrud\Resources\Resource;
 use Repat\CliCrud\Resources\ResourceRegistrar;
+use Repat\CliCrud\Support\ColumnFormatter;
 use Repat\CliCrud\Tables\TableRenderer;
 use Repat\CliCrud\Views\AsciiArt;
 use Repat\CliCrud\Views\DetailViewRenderer;
@@ -158,7 +160,7 @@ class CrudCommand extends Command
         $resource = new $resourceClass;
         $columns = $resource::tableColumns();
 
-        $headers = array_map(fn ($col) => ucfirst(str_replace('_', ' ', $col)), $columns);
+        $headers = array_map(fn ($col) => ColumnFormatter::format($col), $columns);
 
         $rows = [];
         foreach ($items as $index => $item) {
@@ -449,6 +451,13 @@ class CrudCommand extends Command
         $allFields = array_merge($fields, $belongsToRelations);
 
         $data = $this->formBuilder->build($allFields, $model);
+
+        // Preserve existing password if left empty during edit
+        foreach ($fields as $field) {
+            if ($field instanceof Text && $field->isPassword() && empty($data[$field->getName()])) {
+                unset($data[$field->getName()]);
+            }
+        }
 
         if (confirm("Save changes to this {$resource::getSingularLabel()}?")) {
             $model->update($data);

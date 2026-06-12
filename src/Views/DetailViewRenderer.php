@@ -6,6 +6,7 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Collection;
 use Repat\CliCrud\Fields\Relations\Relation;
 use Repat\CliCrud\Resources\Resource;
+use Repat\CliCrud\Support\ColumnFormatter;
 
 use function Termwind\terminal;
 
@@ -214,7 +215,7 @@ class DetailViewRenderer
     {
         $columnWidths = [];
         foreach ($columns as $col) {
-            $columnWidths[$col] = mb_strlen(ucfirst(str_replace('_', ' ', $col)));
+            $columnWidths[$col] = mb_strlen(ColumnFormatter::format($col));
         }
 
         foreach ($items as $item) {
@@ -225,7 +226,10 @@ class DetailViewRenderer
             }
         }
 
-        $totalWidth = array_sum($columnWidths) + (count($columns) * 3) + 1;
+        // Calculate actual content width
+        // Structure: [space][col1][2 spaces][col2][2 spaces]...[colN][space]
+        $gapsWidth = (count($columns) - 1) * 2; // 2 spaces between each column
+        $totalWidth = array_sum($columnWidths) + $gapsWidth + 2; // +2 for left/right padding
         $titleLength = mb_strlen($title);
         $contentWidth = max($totalWidth, $titleLength);
 
@@ -234,16 +238,21 @@ class DetailViewRenderer
             min($this->terminalWidth - 4, self::MAX_BOX_WIDTH)
         );
 
-        $availableWidth = $this->boxWidth - (count($columns) * 3) - 3;
-        $avgWidth = floor($availableWidth / count($columns));
+        // Calculate available width inside the box
+        // Box structure: │[space][content][space]│
+        $availableWidth = $this->boxWidth - 4; // -4 for borders (2) and padding (2)
+
+        // Distribute available width among columns
+        $remaining = $availableWidth - $gapsWidth;
 
         $this->columnWidths = [];
-        $remaining = $availableWidth;
         foreach ($columns as $i => $col) {
             if ($i === count($columns) - 1) {
+                // Last column gets remaining width
                 $this->columnWidths[$col] = $remaining;
             } else {
-                $width = min($columnWidths[$col] + 2, $avgWidth);
+                // Other columns get their needed width or average, whichever is smaller
+                $width = min($columnWidths[$col] + 2, (int) floor($remaining / (count($columns) - $i)));
                 $this->columnWidths[$col] = $width;
                 $remaining -= $width;
             }
@@ -256,7 +265,7 @@ class DetailViewRenderer
     {
         $parts = [];
         foreach ($columns as $col) {
-            $header = ucfirst(str_replace('_', ' ', $col));
+            $header = ColumnFormatter::format($col);
             $parts[] = str_pad($header, $this->columnWidths[$col], ' ');
         }
 
