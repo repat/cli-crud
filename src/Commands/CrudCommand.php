@@ -159,15 +159,24 @@ class CrudCommand extends Command
     {
         $resource = new $resourceClass;
         $columns = $resource::tableColumns();
+        $modelInstance = $resource::getModelInstance();
+        $casts = $modelInstance->getCasts();
 
         $headers = array_map(fn ($col) => ColumnFormatter::format($col), $columns);
+        $headerWidths = array_map(fn ($header) => mb_strlen($header), $headers);
 
         $rows = [];
         foreach ($items as $index => $item) {
             $row = [];
-            foreach ($columns as $column) {
+            foreach ($columns as $colIndex => $column) {
                 $value = data_get($item, $column);
-                $row[] = $this->formatTableValue($value);
+                $formatted = $this->formatTableValueForDatatable($value);
+
+                if (isset($casts[$column]) && $casts[$column] === 'boolean') {
+                    $formatted = $this->centerPad($formatted, $headerWidths[$colIndex]);
+                }
+
+                $row[] = $formatted;
             }
             $rows[$index] = $row;
         }
@@ -319,6 +328,42 @@ class CrudCommand extends Command
         }
 
         return (string) $value;
+    }
+
+    protected function formatTableValueForDatatable(mixed $value): string
+    {
+        if (is_null($value)) {
+            return 'NULL';
+        }
+
+        if (is_bool($value)) {
+            return $value ? '✓' : '✗';
+        }
+
+        if ($value instanceof \DateTimeInterface) {
+            return $value->format(config('cli-crud.display.date_format', 'Y-m-d H:i:s'));
+        }
+
+        return (string) $value;
+    }
+
+    protected function centerPad(string $value, int $width): string
+    {
+        $visibleLength = $this->getVisibleLength($value);
+        if ($visibleLength >= $width) {
+            return $value;
+        }
+
+        $totalPadding = $width - $visibleLength;
+        $leftPadding = (int) floor($totalPadding / 2);
+        $rightPadding = $totalPadding - $leftPadding;
+
+        return str_repeat(' ', $leftPadding).$value.str_repeat(' ', $rightPadding);
+    }
+
+    protected function getVisibleLength(string $value): int
+    {
+        return mb_strlen(preg_replace('/\e\[[\d;]*m/', '', $value));
     }
 
     protected function askForPageNumber(int $totalPages): int
