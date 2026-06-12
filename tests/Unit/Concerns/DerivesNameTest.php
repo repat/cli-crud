@@ -7,18 +7,7 @@ use Repat\CliCrud\Tests\TestCase;
 
 class DerivesNameTest extends TestCase
 {
-    protected function deriveName(string $label): string
-    {
-        return new class
-        {
-            use DerivesName;
-
-            public function test(string $label): string
-            {
-                return $this->deriveName($label);
-            }
-        }->test($label);
-    }
+    use DerivesName;
 
     public function test_space_separated_words(): void
     {
