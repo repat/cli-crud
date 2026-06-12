@@ -4,6 +4,8 @@ namespace Repat\CliCrud\Views;
 
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Collection;
+use Repat\CliCrud\Fields\Field;
+use Repat\CliCrud\Fields\Json;
 use Repat\CliCrud\Fields\Relations\Relation;
 use Repat\CliCrud\Resources\Resource;
 use Repat\CliCrud\Support\ColumnFormatter;
@@ -67,7 +69,7 @@ class DetailViewRenderer
             $fields[] = [
                 'label' => $field->getLabel(),
                 'value' => $value,
-                'formatted' => $this->formatValue($value),
+                'formatted' => $this->formatValue($value, $field),
             ];
         }
 
@@ -315,7 +317,7 @@ class DetailViewRenderer
         $this->output(str_repeat(' ', $padding).$text);
     }
 
-    protected function formatValue(mixed $value): string
+    protected function formatValue(mixed $value, ?Field $field = null): string
     {
         if (is_null($value)) {
             return "\e[90mNULL\e[39m";
@@ -329,7 +331,51 @@ class DetailViewRenderer
             return $value->format(config('cli-crud.display.date_format', 'Y-m-d H:i:s'));
         }
 
+        if ($field instanceof Json) {
+            return $this->formatJsonValue($value, $field);
+        }
+
         return (string) $value;
+    }
+
+    protected function formatJsonValue(mixed $value, Json $field): string
+    {
+        if (is_string($value)) {
+            $decoded = json_decode($value);
+            if (json_last_error() !== JSON_ERROR_NONE) {
+                return "\e[31m[Invalid JSON: ".json_last_error_msg()."]\e[39m";
+            }
+            $json = json_encode($decoded, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE);
+        } elseif (is_array($value) || is_object($value)) {
+            $json = json_encode($value, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE);
+        } else {
+            return (string) $value;
+        }
+
+        if (! $field->isHighlighted()) {
+            return $json;
+        }
+
+        return (string) preg_replace_callback(
+            '/("(?:[^"\\\\]|\\\\.)*")\s*:|("(?:[^"\\\\]|\\\\.)*")|(true|false|null)|(-?\d+(?:\.\d+)?(?:[eE][+-]?\d+)?)|([{}\[\],:]+)/',
+            function ($matches) {
+                if (! empty($matches[1])) {
+                    return "\e[36m".$matches[1]."\e[39m:";
+                }
+                if (! empty($matches[2])) {
+                    return "\e[32m".$matches[2]."\e[39m";
+                }
+                if (! empty($matches[3])) {
+                    return "\e[35m".$matches[3]."\e[39m";
+                }
+                if (! empty($matches[4])) {
+                    return "\e[33m".$matches[4]."\e[39m";
+                }
+
+                return $matches[5];
+            },
+            $json
+        );
     }
 
     protected function formatTableValue(mixed $value): string

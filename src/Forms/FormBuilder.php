@@ -7,6 +7,7 @@ use Illuminate\Support\Facades\Validator;
 use Repat\CliCrud\Fields\Boolean;
 use Repat\CliCrud\Fields\DateTime;
 use Repat\CliCrud\Fields\Field;
+use Repat\CliCrud\Fields\Json;
 use Repat\CliCrud\Fields\Number;
 use Repat\CliCrud\Fields\Relations\BelongsTo;
 use Repat\CliCrud\Fields\Select;
@@ -65,6 +66,7 @@ class FormBuilder
         return match (true) {
             $field instanceof Boolean => $this->promptForBoolean($field, $label, $currentValue),
             $field instanceof Select => $this->promptForSelect($field, $label, $currentValue),
+            $field instanceof Json => $this->promptForJson($field, $label, $currentValue),
             $field instanceof Text => $this->promptForText($field, $label, $currentValue),
             $field instanceof Number => $this->promptForNumber($field, $label, $currentValue),
             $field instanceof DateTime => $this->promptForDateTime($field, $label, $currentValue),
@@ -164,6 +166,36 @@ class FormBuilder
         return textarea(
             label: $label,
             default: (string) ($currentValue ?? $field->getDefault() ?? '')
+        );
+    }
+
+    protected function promptForJson(Json $field, string $label, mixed $currentValue): string
+    {
+        $default = '';
+
+        if ($currentValue !== null) {
+            if (is_string($currentValue)) {
+                $decoded = json_decode($currentValue);
+                if (json_last_error() === JSON_ERROR_NONE && $decoded !== null) {
+                    $default = json_encode($decoded, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE);
+                } else {
+                    $default = $currentValue;
+                }
+            } elseif (is_array($currentValue) || is_object($currentValue)) {
+                $default = json_encode($currentValue, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE);
+            }
+        } elseif ($field->getDefault() !== null) {
+            $default = is_string($field->getDefault())
+                ? $field->getDefault()
+                : json_encode($field->getDefault(), JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE);
+        }
+
+        $promptOptions = $field->getPromptOptions();
+
+        return textarea(
+            label: $label,
+            default: $default,
+            validate: $promptOptions['validate'] ?? null,
         );
     }
 

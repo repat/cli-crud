@@ -3,6 +3,9 @@
 namespace Repat\CliCrud\Tests\Unit\Views;
 
 use DateTime;
+use Repat\CliCrud\Fields\Json;
+use Repat\CliCrud\Fields\Text;
+use Repat\CliCrud\Resources\Resource;
 use Repat\CliCrud\Tests\Fixtures\Post;
 use Repat\CliCrud\Tests\Fixtures\Resources\PostResource;
 use Repat\CliCrud\Tests\Fixtures\Resources\UserResource;
@@ -453,5 +456,213 @@ class DetailViewRendererTest extends TestCase
 
         // Verify the line ends with the right border
         $this->assertEquals('│', mb_substr($headerLine, -1));
+    }
+
+    public function test_json_field_renders_with_syntax_highlighting(): void
+    {
+        $user = User::create([
+            'name' => 'John',
+            'email' => 'john@example.com',
+            'is_active' => true,
+        ]);
+
+        $post = Post::create([
+            'user_id' => $user->id,
+            'title' => 'Test Post',
+            'content' => 'Content',
+            'metadata' => '{"key": "value", "count": 42}',
+        ]);
+
+        $resource = new class extends Resource
+        {
+            protected static string $model = Post::class;
+
+            protected static string $label = 'Posts';
+
+            protected static string $singularLabel = 'Post';
+
+            public static function fields(): array
+            {
+                return [
+                    Text::make('Title', 'title'),
+                    Json::make('Metadata', 'metadata'),
+                ];
+            }
+
+            public static function tableColumns(): array
+            {
+                return ['id', 'title'];
+            }
+        };
+
+        ob_start();
+        $this->renderer->render($post, $resource);
+        $output = ob_get_clean();
+
+        $this->assertStringContainsString('Metadata', $output);
+        $this->assertStringContainsString("\e[36m", $output);
+        $this->assertStringContainsString("\e[32m", $output);
+        $this->assertStringContainsString("\e[33m", $output);
+        $this->assertStringContainsString('"key"', $output);
+        $this->assertStringContainsString('"value"', $output);
+        $this->assertStringContainsString('42', $output);
+    }
+
+    public function test_json_field_renders_without_highlighting_when_disabled(): void
+    {
+        $user = User::create([
+            'name' => 'John',
+            'email' => 'john@example.com',
+            'is_active' => true,
+        ]);
+
+        $post = Post::create([
+            'user_id' => $user->id,
+            'title' => 'Test Post',
+            'content' => 'Content',
+            'metadata' => '{"key": "value"}',
+        ]);
+
+        $resource = new class extends Resource
+        {
+            protected static string $model = Post::class;
+
+            protected static string $label = 'Posts';
+
+            protected static string $singularLabel = 'Post';
+
+            public static function fields(): array
+            {
+                return [
+                    Text::make('Title', 'title'),
+                    Json::make('Metadata', 'metadata')->highlight(false),
+                ];
+            }
+
+            public static function tableColumns(): array
+            {
+                return ['id', 'title'];
+            }
+        };
+
+        ob_start();
+        $this->renderer->render($post, $resource);
+        $output = ob_get_clean();
+
+        $this->assertStringContainsString('Metadata', $output);
+        $this->assertStringContainsString('"key"', $output);
+        $this->assertStringContainsString('"value"', $output);
+        $this->assertStringNotContainsString("\e[36m", $output);
+        $this->assertStringNotContainsString("\e[32m", $output);
+    }
+
+    public function test_json_field_shows_error_for_invalid_json(): void
+    {
+        $renderer = new class extends DetailViewRenderer
+        {
+            public function test_format_json_value(mixed $value, Json $field): string
+            {
+                return $this->formatJsonValue($value, $field);
+            }
+        };
+
+        $field = Json::make('Metadata');
+        $result = $renderer->test_format_json_value('{invalid json}', $field);
+
+        $this->assertStringContainsString('Invalid JSON', $result);
+        $this->assertStringContainsString("\e[31m", $result);
+    }
+
+    public function test_json_field_highlights_booleans_and_null(): void
+    {
+        $user = User::create([
+            'name' => 'John',
+            'email' => 'john@example.com',
+            'is_active' => true,
+        ]);
+
+        $post = Post::create([
+            'user_id' => $user->id,
+            'title' => 'Test Post',
+            'content' => 'Content',
+            'metadata' => '{"active": true, "deleted": false, "parent": null}',
+        ]);
+
+        $resource = new class extends Resource
+        {
+            protected static string $model = Post::class;
+
+            protected static string $label = 'Posts';
+
+            protected static string $singularLabel = 'Post';
+
+            public static function fields(): array
+            {
+                return [
+                    Text::make('Title', 'title'),
+                    Json::make('Metadata', 'metadata'),
+                ];
+            }
+
+            public static function tableColumns(): array
+            {
+                return ['id', 'title'];
+            }
+        };
+
+        ob_start();
+        $this->renderer->render($post, $resource);
+        $output = ob_get_clean();
+
+        $this->assertStringContainsString("\e[35mtrue\e[39m", $output);
+        $this->assertStringContainsString("\e[35mfalse\e[39m", $output);
+        $this->assertStringContainsString("\e[35mnull\e[39m", $output);
+    }
+
+    public function test_json_field_handles_array_values(): void
+    {
+        $user = User::create([
+            'name' => 'John',
+            'email' => 'john@example.com',
+            'is_active' => true,
+        ]);
+
+        $post = Post::create([
+            'user_id' => $user->id,
+            'title' => 'Test Post',
+            'content' => 'Content',
+            'metadata' => ['tags' => ['php', 'laravel'], 'version' => 2],
+        ]);
+
+        $resource = new class extends Resource
+        {
+            protected static string $model = Post::class;
+
+            protected static string $label = 'Posts';
+
+            protected static string $singularLabel = 'Post';
+
+            public static function fields(): array
+            {
+                return [
+                    Text::make('Title', 'title'),
+                    Json::make('Metadata', 'metadata'),
+                ];
+            }
+
+            public static function tableColumns(): array
+            {
+                return ['id', 'title'];
+            }
+        };
+
+        ob_start();
+        $this->renderer->render($post, $resource);
+        $output = ob_get_clean();
+
+        $this->assertStringContainsString('"tags"', $output);
+        $this->assertStringContainsString('"php"', $output);
+        $this->assertStringContainsString('"laravel"', $output);
+        $this->assertStringContainsString("\e[33m2\e[39m", $output);
     }
 }
