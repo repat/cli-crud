@@ -7,11 +7,11 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Collection;
 use Repat\CliCrud\Authorization\Authorizer;
 use Repat\CliCrud\Fields\Relations\BelongsTo;
-use Repat\CliCrud\Fields\Relations\Relation;
 use Repat\CliCrud\Forms\FormBuilder;
 use Repat\CliCrud\Resources\Resource;
 use Repat\CliCrud\Resources\ResourceRegistrar;
 use Repat\CliCrud\Tables\TableRenderer;
+use Repat\CliCrud\Views\DetailViewRenderer;
 
 use function Laravel\Prompts\confirm;
 use function Laravel\Prompts\datatable;
@@ -31,17 +31,21 @@ class CrudCommand extends Command
 
     protected FormBuilder $formBuilder;
 
+    protected DetailViewRenderer $detailViewRenderer;
+
     public function __construct(
         ResourceRegistrar $registrar,
         Authorizer $authorizer,
         TableRenderer $tableRenderer,
-        FormBuilder $formBuilder
+        FormBuilder $formBuilder,
+        DetailViewRenderer $detailViewRenderer
     ) {
         parent::__construct();
         $this->registrar = $registrar;
         $this->authorizer = $authorizer;
         $this->tableRenderer = $tableRenderer;
         $this->formBuilder = $formBuilder;
+        $this->detailViewRenderer = $detailViewRenderer;
     }
 
     public function handle(): int
@@ -87,7 +91,7 @@ class CrudCommand extends Command
         );
 
         if ($selected === 'quit') {
-            return;
+            exit(0);
         }
 
         $this->showResourceMenu($selected);
@@ -113,7 +117,7 @@ class CrudCommand extends Command
             'list' => $this->showListView($resourceClass, 1),
             'create' => $this->showCreateForm($resourceClass),
             'back' => $this->handle(),
-            'quit' => null,
+            'quit' => exit(0),
         };
     }
 
@@ -279,18 +283,18 @@ class CrudCommand extends Command
         }
 
         if ($action === 'quit') {
-            return;
+            exit(0);
         }
     }
 
     protected function formatTableValue(mixed $value): string
     {
         if (is_null($value)) {
-            return 'NULL';
+            return "\e[90mNULL\e[39m";
         }
 
         if (is_bool($value)) {
-            return $value ? 'Yes' : 'No';
+            return $value ? "\e[32m✓\e[39m" : "\e[31m✗\e[39m";
         }
 
         if ($value instanceof \DateTimeInterface) {
@@ -311,64 +315,17 @@ class CrudCommand extends Command
     {
         $resource = new $resourceClass;
 
-        $this->info("\n{$resource::getSingularLabel()} #{$model->getKey()}\n");
-
         $fields = $resource::getFields();
-        foreach ($fields as $field) {
-            $value = $model->{$field->getName()};
-            $formattedValue = $this->formatFieldValue($value);
-            $this->line("{$field->getLabel()}: {$formattedValue}");
-        }
+        if (empty($fields)) {
+            $this->error("No fields defined for {$resource::getSingularLabel()}.");
+            $this->showDetailActions($resourceClass, $model);
 
-        $relations = $resource::getRelations();
-        foreach ($relations as $relation) {
-            $this->showRelationTable($model, $relation);
-        }
-
-        $this->showDetailActions($resourceClass, $model);
-    }
-
-    protected function formatFieldValue(mixed $value): string
-    {
-        if (is_null($value)) {
-            return '<fg=gray>NULL</>';
-        }
-
-        if (is_bool($value)) {
-            return $value ? '<fg=green>Yes</>' : '<fg=red>No</>';
-        }
-
-        if ($value instanceof \DateTimeInterface) {
-            return $value->format(config('cli-crud.display.date_format', 'Y-m-d H:i:s'));
-        }
-
-        return (string) $value;
-    }
-
-    protected function showRelationTable(Model $model, Relation $relation): void
-    {
-        $relatedItems = $model->{$relation->getName()}()->get();
-
-        if ($relatedItems->isEmpty()) {
             return;
         }
 
-        $relatedResource = $relation->getResource();
-        $relationLabel = ucfirst($relation->getName());
+        $this->detailViewRenderer->render($model, $resource);
 
-        $this->info("\n{$relationLabel} ({$relatedItems->count()})\n");
-
-        $perPage = config('cli-crud.pagination.relation_per_page', 10);
-        $totalPages = max(1, ceil($relatedItems->count() / $perPage));
-
-        $tableOutput = $this->tableRenderer->render(
-            $relatedItems->take($perPage),
-            $relatedResource::tableColumns(),
-            1,
-            $totalPages
-        );
-
-        $this->line($tableOutput);
+        $this->showDetailActions($resourceClass, $model);
     }
 
     protected function showDetailActions(string $resourceClass, Model $model): void
@@ -400,7 +357,7 @@ class CrudCommand extends Command
         );
 
         if ($action === 'quit') {
-            return;
+            exit(0);
         }
 
         match ($action) {

@@ -16,7 +16,7 @@ class TestUserResource extends Resource
     public static function fields(): array
     {
         return [
-            Text::make('name')->required(),
+            Text::make('Name', 'name')->required(),
         ];
     }
 

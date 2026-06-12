@@ -1,11 +1,11 @@
 # repat/cli-crud
 
-A CLI CRUD admin panel for Laravel 12.x & 13.x, inspired by [Filament](https://filamentphp.com/) and [Laravel Nova](http://nova.laravel.com/). Built with `laravel/prompts`.
+A CLI CRUD admin panel for Laravel, inspired by [Filament](https://filamentphp.com/) and [Laravel Nova](http://nova.laravel.com/). Built with [`laravel/prompts`](https://laravel.com/docs/13.x/prompts) and [`nunomaduro/termwind`](https://github.com/nunomaduro/termwind).
 
 ## Requirements
 
-- PHP 8.5+
-- Laravel 13.x
+- PHP ^8.2
+- Laravel 12.x | 13.x
 
 ## Installation
 
@@ -73,11 +73,11 @@ class UserResource extends Resource
     public static function fields(): array
     {
         return [
-            Text::make('name')->required(),
-            Text::make('email')->required()->email(),
-            Boolean::make('is_active')->default(true),
-            DateTime::make('email_verified_at')->nullable(),
-            HasMany::make('posts', PostResource::class),
+            Text::make('Name', 'name')->required(),
+            Text::make('Email', 'email')->required()->email(),
+            Boolean::make('Is Active', 'is_active')->default(true),
+            DateTime::make('Email Verified At', 'email_verified_at')->nullable(),
+            HasMany::make('Posts', 'posts', PostResource::class),
         ];
     }
 
@@ -104,43 +104,47 @@ This opens an interactive menu where you can:
 
 ## Field Types
 
+All field types use the signature `Field::make(string $label, string $name)` where `$label` is the display name and `$name` is the database column name.
+
 ### Scalar Fields
 
-- `Text::make('name')` - Text input
+- `Text::make('Name', 'name')` - Text input
   - `->email()` - Email validation
   - `->required()` - Required field
   - `->nullable()` - Nullable field
   - `->default('value')` - Default value
   - `->rules(['string', 'max:255'])` - Custom validation rules
 
-- `Number::make('age')` - Numeric input
+- `Number::make('Age', 'age')` - Numeric input
   - `->float()` - Allow float values
   - `->required()`, `->nullable()`, `->default()`, `->rules()`
 
-- `Boolean::make('is_active')` - Yes/No confirmation
+- `Boolean::make('Is Active', 'is_active')` - Yes/No confirmation
   - `->default(true)`, `->rules()`
 
-- `DateTime::make('created_at')` - Date/time input
+- `DateTime::make('Created At', 'created_at')` - Date/time input
   - `->format('Y-m-d H:i:s')` - Custom format
   - `->required()`, `->nullable()`, `->default()`, `->rules()`
 
-- `Select::make('status')` - Dropdown selection
+- `Select::make('Status', 'status')` - Dropdown selection
   - `->options(['active' => 'Active', 'inactive' => 'Inactive'])`
   - `->required()`, `->nullable()`, `->default()`, `->rules()`
 
-- `Textarea::make('content')` - Multi-line text input
+- `Textarea::make('Content', 'content')` - Multi-line text input
   - `->required()`, `->nullable()`, `->default()`, `->rules()`
 
 ### Relations
 
-- `BelongsTo::make('user_id', UserResource::class)` - Belongs to relationship
+All relation types use the signature `Relation::make(string $label, string $name, string $resourceClass)` where `$label` is the display name, `$name` is the relationship method name on the model, and `$resourceClass` is the related resource class.
+
+- `BelongsTo::make('User', 'user', UserResource::class)` - Belongs to relationship
   - `->displayField('name')` - Field to display in selection
   - Uses inline search for large datasets
 
-- `HasOne::make('profile', ProfileResource::class)` - Has one relationship
+- `HasOne::make('Profile', 'profile', ProfileResource::class)` - Has one relationship
   - Displayed as sub-table in detail view
 
-- `HasMany::make('posts', PostResource::class)` - Has many relationship
+- `HasMany::make('Posts', 'posts', PostResource::class)` - Has many relationship
   - Displayed as paginated sub-table in detail view
 
 ## Authorization

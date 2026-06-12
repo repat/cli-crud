@@ -16,21 +16,15 @@ abstract class Field
 
     protected array $rules = [];
 
-    public function __construct(string $name)
+    public function __construct(string $label, string $name)
     {
+        $this->label = $label;
         $this->name = $name;
     }
 
-    public static function make(string $name): static
+    public static function make(string $label, string $name): static
     {
-        return new static($name);
-    }
-
-    public function label(string $label): static
-    {
-        $this->label = $label;
-
-        return $this;
+        return new static($label, $name);
     }
 
     public function required(): static
@@ -68,7 +62,7 @@ abstract class Field
 
     public function getLabel(): string
     {
-        return $this->label ?? str_replace('_', ' ', ucfirst($this->name));
+        return $this->label;
     }
 
     public function isRequired(): bool

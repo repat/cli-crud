@@ -6,9 +6,9 @@ class DateTime extends Field
 {
     protected string $format;
 
-    public function __construct(string $name)
+    public function __construct(string $label, string $name)
     {
-        parent::__construct($name);
+        parent::__construct($label, $name);
         $this->format = config('cli-crud.display.date_format', 'Y-m-d H:i:s');
     }
 

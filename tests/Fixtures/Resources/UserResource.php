@@ -19,10 +19,10 @@ class UserResource extends Resource
     public static function fields(): array
     {
         return [
-            Text::make('name')->required(),
-            Text::make('email')->required()->email(),
-            Boolean::make('is_active')->default(true),
-            HasMany::make('posts', PostResource::class),
+            Text::make('Name', 'name')->required(),
+            Text::make('Email', 'email')->required()->email(),
+            Boolean::make('Is Active', 'is_active')->default(true),
+            HasMany::make('Posts', 'posts', PostResource::class),
         ];
     }
 

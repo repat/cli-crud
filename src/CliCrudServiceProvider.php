@@ -10,6 +10,7 @@ use Repat\CliCrud\Forms\FormBuilder;
 use Repat\CliCrud\Resources\ResourceRegistrar;
 use Repat\CliCrud\Tables\TableRenderer;
 use Repat\CliCrud\Validation\FieldValidator;
+use Repat\CliCrud\Views\DetailViewRenderer;
 
 class CliCrudServiceProvider extends ServiceProvider
 {
@@ -40,6 +41,10 @@ class CliCrudServiceProvider extends ServiceProvider
 
         $this->app->singleton(FieldValidator::class, function ($app) {
             return new FieldValidator;
+        });
+
+        $this->app->singleton(DetailViewRenderer::class, function ($app) {
+            return new DetailViewRenderer;
         });
     }
 

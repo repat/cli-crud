@@ -19,9 +19,9 @@ class PostResource extends Resource
     public static function fields(): array
     {
         return [
-            BelongsTo::make('user_id', UserResource::class)->displayField('name'),
-            Text::make('title')->required(),
-            Textarea::make('content')->nullable(),
+            BelongsTo::make('User', 'user', UserResource::class)->displayField('name'),
+            Text::make('Title', 'title')->required(),
+            Textarea::make('Content', 'content')->nullable(),
         ];
     }
 

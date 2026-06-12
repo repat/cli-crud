@@ -33,9 +33,9 @@ class FieldValidatorTest extends TestCase
             public static function fields(): array
             {
                 return [
-                    Text::make('name'),
-                    Text::make('email'),
-                    Boolean::make('is_active'),
+                    Text::make('Name', 'name'),
+                    Text::make('Email', 'email'),
+                    Boolean::make('Is Active', 'is_active'),
                 ];
             }
 
@@ -63,7 +63,7 @@ class FieldValidatorTest extends TestCase
             public static function fields(): array
             {
                 return [
-                    Number::make('name'),
+                    Number::make('Name', 'name'),
                 ];
             }
 
@@ -92,7 +92,7 @@ class FieldValidatorTest extends TestCase
             public static function fields(): array
             {
                 return [
-                    Text::make('nonexistent_field'),
+                    Text::make('Nonexistent Field', 'nonexistent_field'),
                 ];
             }
 
