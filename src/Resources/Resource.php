@@ -4,6 +4,7 @@ namespace Repat\CliCrud\Resources;
 
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
+use Repat\CliCrud\Cards\Card;
 use Repat\CliCrud\Fields\Field;
 use Repat\CliCrud\Fields\Relations\Relation;
 
@@ -66,5 +67,21 @@ abstract class Resource
     public static function usesSoftDeletes(): bool
     {
         return in_array(SoftDeletes::class, class_uses_recursive(static::$model));
+    }
+
+    /**
+     * @return array<Card>
+     */
+    public static function cards(): array
+    {
+        return [];
+    }
+
+    /**
+     * @return array<Card>
+     */
+    public static function getCards(): array
+    {
+        return static::cards();
     }
 }

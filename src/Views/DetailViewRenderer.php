@@ -55,9 +55,26 @@ class DetailViewRenderer
 
         $this->renderDetailBox($title, $fields);
 
+        $this->renderCards($model, $resource, 'before');
+
         $relations = $resource::getRelations();
         foreach ($relations as $relation) {
             $this->renderRelation($model, $relation);
+        }
+
+        $this->renderCards($model, $resource, 'after');
+    }
+
+    protected function renderCards(Model $model, Resource $resource, string $position): void
+    {
+        $cards = array_filter(
+            $resource::getCards(),
+            fn ($card) => $card->getPosition() === $position
+        );
+
+        foreach ($cards as $card) {
+            $this->output('');
+            $this->output($card->render($model, $resource));
         }
     }
 

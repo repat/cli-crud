@@ -3,6 +3,7 @@
 namespace Repat\CliCrud\Tests\Unit\Views;
 
 use DateTime;
+use Repat\CliCrud\Cards\Card;
 use Repat\CliCrud\Fields\Json;
 use Repat\CliCrud\Fields\Text;
 use Repat\CliCrud\Resources\Resource;
@@ -664,5 +665,117 @@ class DetailViewRendererTest extends TestCase
         $this->assertStringContainsString('"php"', $output);
         $this->assertStringContainsString('"laravel"', $output);
         $this->assertStringContainsString("\e[33m2\e[39m", $output);
+    }
+
+    public function test_cards_render_after_relations_by_default(): void
+    {
+        $user = User::create([
+            'name' => 'John Doe',
+            'email' => 'john@example.com',
+            'is_active' => true,
+        ]);
+
+        $resource = new class extends Resource
+        {
+            protected static string $model = User::class;
+
+            protected static string $label = 'Users';
+
+            protected static string $singularLabel = 'User';
+
+            public static function fields(): array
+            {
+                return [
+                    Text::make('Name', 'name'),
+                    Text::make('Email', 'email'),
+                ];
+            }
+
+            public static function tableColumns(): array
+            {
+                return ['id', 'name'];
+            }
+
+            public static function cards(): array
+            {
+                return [
+                    Card::metric('Total Users', fn () => 42),
+                ];
+            }
+        };
+
+        ob_start();
+        $this->renderer->render($user, $resource);
+        $output = ob_get_clean();
+
+        $this->assertStringContainsString('Total Users', $output);
+        $this->assertStringContainsString('42', $output);
+    }
+
+    public function test_cards_with_before_render_before_relations(): void
+    {
+        $user = User::create([
+            'name' => 'John Doe',
+            'email' => 'john@example.com',
+            'is_active' => true,
+        ]);
+
+        Post::create([
+            'user_id' => $user->id,
+            'title' => 'Test Post',
+            'content' => 'Content',
+        ]);
+
+        $resource = new class extends Resource
+        {
+            protected static string $model = User::class;
+
+            protected static string $label = 'Users';
+
+            protected static string $singularLabel = 'User';
+
+            public static function fields(): array
+            {
+                return [
+                    Text::make('Name', 'name'),
+                    Text::make('Email', 'email'),
+                ];
+            }
+
+            public static function tableColumns(): array
+            {
+                return ['id', 'name'];
+            }
+
+            public static function cards(): array
+            {
+                return [
+                    Card::metric('Total Users', fn () => 42)->before(),
+                ];
+            }
+        };
+
+        ob_start();
+        $this->renderer->render($user, $resource);
+        $output = ob_get_clean();
+
+        $this->assertStringContainsString('Total Users', $output);
+        $this->assertStringContainsString('42', $output);
+    }
+
+    public function test_empty_cards_does_not_break_rendering(): void
+    {
+        $user = User::create([
+            'name' => 'John Doe',
+            'email' => 'john@example.com',
+            'is_active' => true,
+        ]);
+
+        ob_start();
+        $this->renderer->render($user, new UserResource);
+        $output = ob_get_clean();
+
+        $this->assertStringContainsString('John Doe', $output);
+        $this->assertStringContainsString('╭', $output);
     }
 }
