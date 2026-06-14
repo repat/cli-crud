@@ -2,6 +2,7 @@
 
 namespace Repat\CliCrud\Resources;
 
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Repat\CliCrud\Cards\Card;
@@ -15,6 +16,14 @@ abstract class Resource
     protected static string $label;
 
     protected static string $singularLabel;
+
+    /**
+     * Optional explicit override for searchable column names. When set,
+     * takes precedence over fields marked with ->searchable().
+     *
+     * @var array<int, string>|null
+     */
+    protected static ?array $search = null;
 
     /**
      * @return array<Field|Relation>
@@ -67,6 +76,54 @@ abstract class Resource
     public static function usesSoftDeletes(): bool
     {
         return in_array(SoftDeletes::class, class_uses_recursive(static::$model));
+    }
+
+    /**
+     * Resolve the list of column names the resource can be searched on.
+     *
+     * Resolution order:
+     *   1. The explicit $search override on the subclass (raw column names).
+     *   2. Names of all Field instances that opted in via ->searchable().
+     *
+     * @return array<int, string>
+     */
+    public static function searchableFields(): array
+    {
+        if (is_array(static::$search)) {
+            return array_values(array_unique(array_map('strval', static::$search)));
+        }
+
+        $names = [];
+        foreach (static::getFields() as $field) {
+            if ($field->isSearchable()) {
+                $names[] = $field->getName();
+            }
+        }
+
+        return array_values(array_unique($names));
+    }
+
+    /**
+     * Apply the search term to the query. Override this method to integrate
+     * with a full-text search engine such as Laravel Scout, Algolia, or
+     * Meilisearch. The method must return an Eloquent Builder.
+     */
+    public static function searchUsing(Builder $query, string $term): Builder
+    {
+        $searchable = static::searchableFields();
+        $trimmed = trim($term);
+
+        if ($trimmed === '' || empty($searchable)) {
+            return $query;
+        }
+
+        $like = '%'.$trimmed.'%';
+
+        return $query->where(function (Builder $inner) use ($searchable, $like) {
+            foreach ($searchable as $field) {
+                $inner->orWhere($field, 'like', $like);
+            }
+        });
     }
 
     /**

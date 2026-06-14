@@ -7,6 +7,7 @@ use Illuminate\Support\Collection;
 use Repat\CliCrud\Fields\Field;
 use Repat\CliCrud\Fields\Json;
 use Repat\CliCrud\Fields\Relations\Relation;
+use Repat\CliCrud\Fields\Textarea;
 use Repat\CliCrud\Resources\Resource;
 use Repat\CliCrud\Support\ColumnFormatter;
 use Repat\CliCrud\Support\ColumnTypeMapper;
@@ -356,7 +357,46 @@ class DetailViewRenderer
             return $value->name;
         }
 
+        if ($field instanceof Textarea && $field->isMarkdown()) {
+            return $this->formatMarkdownValue((string) $value);
+        }
+
         return (string) $value;
+    }
+
+    protected function formatMarkdownValue(string $value): string
+    {
+        if (! class_exists(\League\CommonMark\CommonMarkConverter::class)) {
+            throw new \RuntimeException(
+                'Markdown rendering requires league/commonmark. Install it with: composer require league/commonmark'
+            );
+        }
+
+        $converter = new \League\CommonMark\CommonMarkConverter([
+            'html_input' => 'strip',
+            'allow_unsafe_links' => false,
+        ]);
+
+        $html = $converter->convert($value)->getContent();
+
+        $html = preg_replace('/<pre><code[^>]*>(.*?)<\/code><\/pre>/is', "\n\e[38;5;244m$1\e[39m\n", $html);
+        $html = preg_replace('/<code[^>]*>(.*?)<\/code>/i', "\e[38;5;244m$1\e[39m", $html);
+        $html = preg_replace('/<strong>(.*?)<\/strong>/i', "\e[1m$1\e[22m", $html);
+        $html = preg_replace('/<em>(.*?)<\/em>/i', "\e[3m$1\e[23m", $html);
+        $html = preg_replace('/<hr\s*\/?>/i', "\n\e[90m".str_repeat('─', 40)."\e[39m\n", $html);
+        $html = preg_replace('/<a\s+[^>]*href="([^"]*)"[^>]*>(.*?)<\/a>/i', "$2 (\e[4m$1\e[24m)", $html);
+
+        $html = preg_replace('/<h[1-6]>(.*?)<\/h[1-6]>/i', "\e[1;33m$1\e[0m\n\n", $html);
+        $html = preg_replace('/<li[^>]*>(.*?)<\/li>/is', "  • $1\n", $html);
+        $html = preg_replace('/<blockquote[^>]*>(.*?)<\/blockquote>/is', "\e[38;5;242m$1\e[39m\n\n", $html);
+        $html = str_ireplace('</p>', "\n\n", $html);
+        $html = preg_replace('/<br\s*\/?>/i', "\n", $html);
+
+        $html = strip_tags($html);
+        $html = html_entity_decode($html, ENT_QUOTES | ENT_HTML5, 'UTF-8');
+        $html = preg_replace('/\n{3,}/', "\n\n", $html);
+
+        return trim($html);
     }
 
     protected function formatJsonValue(mixed $value, Json $field): string
@@ -424,6 +464,26 @@ class DetailViewRenderer
 
     protected function wrapText(string $text, int $maxWidth): array
     {
+        $paragraphs = preg_split('/\n\n+/', trim($text));
+
+        if (count($paragraphs) > 1) {
+            $lines = [];
+
+            foreach ($paragraphs as $paragraph) {
+                $wrapped = $this->wrapText($paragraph, $maxWidth);
+
+                foreach ($wrapped as $wrappedLine) {
+                    $lines[] = $wrappedLine;
+                }
+
+                $lines[] = '';
+            }
+
+            array_pop($lines);
+
+            return $lines;
+        }
+
         if (mb_strlen($text) > self::MAX_VALUE_LENGTH) {
             $text = mb_substr($text, 0, self::MAX_VALUE_LENGTH - 3).'...';
         }

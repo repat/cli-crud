@@ -19,6 +19,7 @@ class {{ class }} extends Resource
     public static function fields(): array
     {
         return [
+            // Opt in to search by chaining ->searchable() on a Field.
             {{ fields }}
         ];
     }

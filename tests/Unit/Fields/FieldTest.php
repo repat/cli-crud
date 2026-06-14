@@ -232,4 +232,33 @@ class FieldTest extends TestCase
 
         $this->assertSame($field, $result);
     }
+
+    public function test_field_is_not_searchable_by_default(): void
+    {
+        $field = Text::make('Name', 'name');
+
+        $this->assertFalse($field->isSearchable());
+    }
+
+    public function test_searchable_flags_field_for_resource_search(): void
+    {
+        $field = Text::make('Name', 'name')->searchable();
+
+        $this->assertTrue($field->isSearchable());
+    }
+
+    public function test_searchable_returns_static_for_chaining(): void
+    {
+        $field = Text::make('Name', 'name');
+        $result = $field->searchable();
+
+        $this->assertSame($field, $result);
+    }
+
+    public function test_searchable_can_be_toggled_off(): void
+    {
+        $field = Text::make('Name', 'name')->searchable(false);
+
+        $this->assertFalse($field->isSearchable());
+    }
 }

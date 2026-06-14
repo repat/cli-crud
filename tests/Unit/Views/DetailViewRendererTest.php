@@ -6,6 +6,7 @@ use DateTime;
 use Repat\CliCrud\Cards\Card;
 use Repat\CliCrud\Fields\Json;
 use Repat\CliCrud\Fields\Text;
+use Repat\CliCrud\Fields\Textarea;
 use Repat\CliCrud\Resources\Resource;
 use Repat\CliCrud\Tests\Fixtures\FormType;
 use Repat\CliCrud\Tests\Fixtures\Post;
@@ -147,6 +148,76 @@ class DetailViewRendererTest extends TestCase
         $result = $renderer->test_format_json_value(FormType::Draft, $field);
 
         $this->assertStringContainsString('"Draft"', $result);
+    }
+
+    public function test_markdown_textarea_bold_renders_with_ansi(): void
+    {
+        $renderer = new class extends DetailViewRenderer
+        {
+            public function test_format_value(mixed $value, ?\Repat\CliCrud\Fields\Field $field = null): string
+            {
+                return $this->formatValue($value, $field);
+            }
+        };
+
+        $field = Textarea::make('Content', 'content')->markdown();
+        $result = $renderer->test_format_value('**bold text**', $field);
+
+        $this->assertStringContainsString("\e[1m", $result);
+        $this->assertStringContainsString("bold text", $result);
+        $this->assertStringContainsString("\e[22m", $result);
+    }
+
+    public function test_markdown_textarea_code_renders_with_ansi(): void
+    {
+        $renderer = new class extends DetailViewRenderer
+        {
+            public function test_format_value(mixed $value, ?\Repat\CliCrud\Fields\Field $field = null): string
+            {
+                return $this->formatValue($value, $field);
+            }
+        };
+
+        $field = Textarea::make('Content', 'content')->markdown();
+        $result = $renderer->test_format_value('Use the `run()` method.', $field);
+
+        $this->assertStringContainsString("\e[38;5;244m", $result);
+        $this->assertStringContainsString("run()", $result);
+        $this->assertStringContainsString("\e[39m", $result);
+    }
+
+    public function test_non_markdown_textarea_returns_plain_text(): void
+    {
+        $renderer = new class extends DetailViewRenderer
+        {
+            public function test_format_value(mixed $value, ?\Repat\CliCrud\Fields\Field $field = null): string
+            {
+                return $this->formatValue($value, $field);
+            }
+        };
+
+        $field = Textarea::make('Content', 'content');
+        $result = $renderer->test_format_value('**bold**', $field);
+
+        $this->assertSame('**bold**', $result);
+    }
+
+    public function test_wrap_text_preserves_paragraphs(): void
+    {
+        $renderer = new class extends DetailViewRenderer
+        {
+            public function test_wrap_text(string $text, int $maxWidth): array
+            {
+                return $this->wrapText($text, $maxWidth);
+            }
+        };
+
+        $result = $renderer->test_wrap_text("First paragraph.\n\nSecond paragraph.", 80);
+
+        $this->assertCount(3, $result);
+        $this->assertSame('First paragraph.', $result[0]);
+        $this->assertSame('', $result[1]);
+        $this->assertSame('Second paragraph.', $result[2]);
     }
 
     public function test_it_wraps_long_values(): void

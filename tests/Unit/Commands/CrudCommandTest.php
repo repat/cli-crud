@@ -116,6 +116,19 @@ class CrudCommandTest extends TestCase
         $this->assertEquals('Published', $result);
     }
 
+    public function test_render_list_header_without_search(): void
+    {
+        $this->assertEquals('Users', $this->invokeRenderListHeader('Users', null));
+    }
+
+    public function test_render_list_header_with_search(): void
+    {
+        $this->assertEquals(
+            'Users (search: "joe")',
+            $this->invokeRenderListHeader('Users', 'joe')
+        );
+    }
+
     protected function invokeCenterPad(string $value, int $width): string
     {
         $reflection = new \ReflectionClass($this->command);
@@ -150,5 +163,14 @@ class CrudCommandTest extends TestCase
         $method->setAccessible(true);
 
         return $method->invoke($this->command, $value);
+    }
+
+    protected function invokeRenderListHeader(string $label, ?string $search): string
+    {
+        $reflection = new \ReflectionClass($this->command);
+        $method = $reflection->getMethod('renderListHeader');
+        $method->setAccessible(true);
+
+        return $method->invoke($this->command, $label, $search);
     }
 }

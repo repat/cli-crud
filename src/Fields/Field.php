@@ -22,6 +22,8 @@ abstract class Field
 
     protected array $rules = [];
 
+    protected bool $searchable = false;
+
     public function __construct(string $label, ?string $name = null)
     {
         $this->label = $label;
@@ -59,6 +61,18 @@ abstract class Field
         $this->rules = $rules;
 
         return $this;
+    }
+
+    public function searchable(bool $searchable = true): static
+    {
+        $this->searchable = $searchable;
+
+        return $this;
+    }
+
+    public function isSearchable(): bool
+    {
+        return $this->searchable;
     }
 
     public function getName(): string

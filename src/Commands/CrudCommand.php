@@ -20,6 +20,7 @@ use Repat\CliCrud\Views\DetailViewRenderer;
 use function Laravel\Prompts\confirm;
 use function Laravel\Prompts\datatable;
 use function Laravel\Prompts\select;
+use function Laravel\Prompts\text;
 
 class CrudCommand extends Command
 {
@@ -128,7 +129,7 @@ class CrudCommand extends Command
         };
     }
 
-    protected function showListView(string $resourceClass, int $page, bool $showTrashed = false): void
+    protected function showListView(string $resourceClass, int $page, bool $showTrashed = false, ?string $search = null): void
     {
         $resource = new $resourceClass;
         $modelClass = $resource::getModel();
@@ -138,6 +139,13 @@ class CrudCommand extends Command
             $query->onlyTrashed();
         }
 
+        if ($search === null && ! empty($resource::searchableFields())) {
+            $search = $this->promptForSearchTerm($resource::getLabel());
+            $page = 1;
+        }
+
+        $query = $resource::searchUsing($query, $search ?? '');
+
         $perPage = config('cli-crud.pagination.per_page', 15);
         $total = $query->count();
         $totalPages = max(1, ceil($total / $perPage));
@@ -145,7 +153,7 @@ class CrudCommand extends Command
 
         $items = $query->skip(($page - 1) * $perPage)->take($perPage)->get();
 
-        $this->info("\n{$resource::getLabel()}\n");
+        $this->info("\n".$this->renderListHeader($resource::getLabel(), $search));
 
         if ($items->isEmpty()) {
             $this->showResourceMenu($resourceClass);
@@ -153,10 +161,32 @@ class CrudCommand extends Command
             return;
         }
 
-        $this->showListActions($resourceClass, $items, $page, $totalPages, $showTrashed);
+        $this->showListActions($resourceClass, $items, $page, $totalPages, $showTrashed, $search);
     }
 
-    protected function showListActions(string $resourceClass, Collection $items, int $page, int $totalPages, bool $showTrashed): void
+    protected function promptForSearchTerm(string $label): ?string
+    {
+        $term = text(
+            label: "Search {$label}",
+            placeholder: 'leave empty to show all',
+            required: false,
+        );
+
+        $trimmed = trim((string) $term);
+
+        return $trimmed === '' ? null : $trimmed;
+    }
+
+    protected function renderListHeader(string $label, ?string $search): string
+    {
+        if ($search === null) {
+            return $label;
+        }
+
+        return $label.' (search: "'.$search.'")';
+    }
+
+    protected function showListActions(string $resourceClass, Collection $items, int $page, int $totalPages, bool $showTrashed, ?string $search = null): void
     {
         $resource = new $resourceClass;
         $columns = $resource::tableColumns();
@@ -196,10 +226,10 @@ class CrudCommand extends Command
         }
 
         $selectedItem = $items[$selectedIndex];
-        $this->showRecordActionMenu($resourceClass, $selectedItem, $page, $totalPages, $showTrashed);
+        $this->showRecordActionMenu($resourceClass, $selectedItem, $page, $totalPages, $showTrashed, $search);
     }
 
-    protected function showRecordActionMenu(string $resourceClass, Model $item, int $page, int $totalPages, bool $showTrashed): void
+    protected function showRecordActionMenu(string $resourceClass, Model $item, int $page, int $totalPages, bool $showTrashed, ?string $search = null): void
     {
         $resource = new $resourceClass;
         $options = [];
@@ -243,62 +273,62 @@ class CrudCommand extends Command
             options: $options
         );
 
-        $this->handleRecordAction($action, $resourceClass, $item, $page, $totalPages, $showTrashed);
+        $this->handleRecordAction($action, $resourceClass, $item, $page, $totalPages, $showTrashed, $search);
     }
 
-    protected function handleRecordAction(string $action, string $resourceClass, Model $item, int $page, int $totalPages, bool $showTrashed): void
+    protected function handleRecordAction(string $action, string $resourceClass, Model $item, int $page, int $totalPages, bool $showTrashed, ?string $search = null): void
     {
         if ($action === 'view') {
-            $this->showDetailView($resourceClass, $item);
-            $this->showListView($resourceClass, $page, $showTrashed);
+            $this->showDetailView($resourceClass, $item, $search);
+            $this->showListView($resourceClass, $page, $showTrashed, $search);
 
             return;
         }
 
         if ($action === 'edit') {
-            $this->showEditForm($resourceClass, $item);
-            $this->showListView($resourceClass, $page, $showTrashed);
+            $this->showEditForm($resourceClass, $item, $search);
+            $this->showListView($resourceClass, $page, $showTrashed, $search);
 
             return;
         }
 
         if ($action === 'delete') {
             $this->deleteModel($resourceClass, $item);
-            $this->showListView($resourceClass, $page, $showTrashed);
+            $this->showListView($resourceClass, $page, $showTrashed, $search);
 
             return;
         }
 
         if ($action === 'restore') {
             $this->restoreModel($resourceClass, $item);
-            $this->showListView($resourceClass, $page, $showTrashed);
+            $this->showListView($resourceClass, $page, $showTrashed, $search);
 
             return;
         }
 
         if ($action === 'force_delete') {
             $this->forceDeleteModel($resourceClass, $item);
-            $this->showListView($resourceClass, $page, $showTrashed);
+            $this->showListView($resourceClass, $page, $showTrashed, $search);
 
             return;
         }
 
         if ($action === 'create') {
-            $this->showCreateForm($resourceClass);
-            $this->showListView($resourceClass, $page, $showTrashed);
+            $this->showCreateForm($resourceClass, $search);
+            $this->showListView($resourceClass, $page, $showTrashed, $search);
 
             return;
         }
 
         if ($action === 'toggle_trashed') {
-            $this->showListView($resourceClass, 1, ! $showTrashed);
+            $this->showListView($resourceClass, 1, ! $showTrashed, $search);
 
             return;
         }
 
         if ($action === 'page') {
             $newPage = $this->askForPageNumber($totalPages);
-            $this->showListView($resourceClass, $newPage, $showTrashed);
+            $this->showListView($resourceClass, $newPage, $showTrashed, $search);
 
             return;
         }
@@ -382,24 +412,24 @@ class CrudCommand extends Command
         return max(1, min($page, $totalPages));
     }
 
-    protected function showDetailView(string $resourceClass, Model $model): void
+    protected function showDetailView(string $resourceClass, Model $model, ?string $search = null): void
     {
         $resource = new $resourceClass;
 
         $fields = $resource::getFields();
         if (empty($fields)) {
             $this->error("No fields defined for {$resource::getSingularLabel()}.");
-            $this->showDetailActions($resourceClass, $model);
+            $this->showDetailActions($resourceClass, $model, $search);
 
             return;
         }
 
         $this->detailViewRenderer->render($model, $resource);
 
-        $this->showDetailActions($resourceClass, $model);
+        $this->showDetailActions($resourceClass, $model, $search);
     }
 
-    protected function showDetailActions(string $resourceClass, Model $model): void
+    protected function showDetailActions(string $resourceClass, Model $model, ?string $search = null): void
     {
         $resource = new $resourceClass;
         $options = [];
@@ -437,7 +467,7 @@ class CrudCommand extends Command
         }
 
         if ($action === 'edit') {
-            $this->showEditForm($resourceClass, $model);
+            $this->showEditForm($resourceClass, $model, $search);
 
             return;
         }
@@ -449,10 +479,10 @@ class CrudCommand extends Command
             'back' => null,
         };
 
-        $this->showListView($resourceClass, 1);
+        $this->showListView($resourceClass, 1, false, $search);
     }
 
-    protected function showCreateForm(string $resourceClass): void
+    protected function showCreateForm(string $resourceClass, ?string $search = null): void
     {
         $resource = new $resourceClass;
 
@@ -479,13 +509,13 @@ class CrudCommand extends Command
             $model = $modelClass::create($data);
 
             $this->info("{$resource::getSingularLabel()} created successfully!");
-            $this->showDetailView($resourceClass, $model);
+            $this->showDetailView($resourceClass, $model, $search);
         } else {
             $this->showResourceMenu($resourceClass);
         }
     }
 
-    protected function showEditForm(string $resourceClass, Model $model): void
+    protected function showEditForm(string $resourceClass, Model $model, ?string $search = null): void
     {
         $resource = new $resourceClass;
 
@@ -519,7 +549,7 @@ class CrudCommand extends Command
             $this->info("{$resource::getSingularLabel()} updated successfully!");
         }
 
-        $this->showDetailView($resourceClass, $model);
+        $this->showDetailView($resourceClass, $model, $search);
     }
 
     protected function deleteModel(string $resourceClass, Model $model): void
