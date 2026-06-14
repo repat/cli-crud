@@ -7,6 +7,8 @@ use Repat\CliCrud\Fields\Text;
 use Repat\CliCrud\Fields\Number;
 use Repat\CliCrud\Fields\Boolean;
 use Repat\CliCrud\Fields\DateTime;
+use Repat\CliCrud\Fields\Textarea;
+use Repat\CliCrud\Fields\Json;
 
 class {{ class }} extends Resource
 {
@@ -17,12 +19,12 @@ class {{ class }} extends Resource
     public static function fields(): array
     {
         return [
-            Text::make('Name', 'name')->required(),
+            {{ fields }}
         ];
     }
 
     public static function tableColumns(): array
     {
-        return ['id', 'name', 'created_at'];
+        return [{{ tableColumns }}];
     }
 }

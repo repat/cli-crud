@@ -7,6 +7,7 @@ use Repat\CliCrud\Cards\Card;
 use Repat\CliCrud\Fields\Json;
 use Repat\CliCrud\Fields\Text;
 use Repat\CliCrud\Resources\Resource;
+use Repat\CliCrud\Tests\Fixtures\FormType;
 use Repat\CliCrud\Tests\Fixtures\Post;
 use Repat\CliCrud\Tests\Fixtures\Resources\PostResource;
 use Repat\CliCrud\Tests\Fixtures\Resources\UserResource;
@@ -115,6 +116,37 @@ class DetailViewRendererTest extends TestCase
         $formatted = $renderer->test_format_value($date);
 
         $this->assertEquals('2024-01-15 10:30:00', $formatted);
+    }
+
+    public function test_it_formats_backed_enum_as_name(): void
+    {
+        $renderer = new class extends DetailViewRenderer
+        {
+            public function test_format_value(mixed $value): string
+            {
+                return $this->formatValue($value);
+            }
+        };
+
+        $formatted = $renderer->test_format_value(FormType::Draft);
+
+        $this->assertEquals('Draft', $formatted);
+    }
+
+    public function test_it_formats_enum_in_json_value(): void
+    {
+        $renderer = new class extends DetailViewRenderer
+        {
+            public function test_format_json_value(mixed $value, Json $field): string
+            {
+                return $this->formatJsonValue($value, $field);
+            }
+        };
+
+        $field = Json::make('Status', 'status');
+        $result = $renderer->test_format_json_value(FormType::Draft, $field);
+
+        $this->assertStringContainsString('"Draft"', $result);
     }
 
     public function test_it_wraps_long_values(): void

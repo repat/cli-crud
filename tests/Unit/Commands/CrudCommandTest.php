@@ -7,6 +7,7 @@ use Repat\CliCrud\Commands\CrudCommand;
 use Repat\CliCrud\Forms\FormBuilder;
 use Repat\CliCrud\Resources\ResourceRegistrar;
 use Repat\CliCrud\Tables\TableRenderer;
+use Repat\CliCrud\Tests\Fixtures\FormType;
 use Repat\CliCrud\Tests\TestCase;
 use Repat\CliCrud\Views\DetailViewRenderer;
 
@@ -101,6 +102,20 @@ class CrudCommandTest extends TestCase
         $this->assertEquals(0, $result);
     }
 
+    public function test_format_table_value_with_enum_returns_name(): void
+    {
+        $result = $this->invokeFormatTableValue(FormType::Draft);
+
+        $this->assertEquals('Draft', $result);
+    }
+
+    public function test_format_table_value_for_datatable_with_enum_returns_name(): void
+    {
+        $result = $this->invokeFormatTableValueForDatatable(FormType::Published);
+
+        $this->assertEquals('Published', $result);
+    }
+
     protected function invokeCenterPad(string $value, int $width): string
     {
         $reflection = new \ReflectionClass($this->command);
@@ -114,6 +129,24 @@ class CrudCommandTest extends TestCase
     {
         $reflection = new \ReflectionClass($this->command);
         $method = $reflection->getMethod('getVisibleLength');
+        $method->setAccessible(true);
+
+        return $method->invoke($this->command, $value);
+    }
+
+    protected function invokeFormatTableValue(mixed $value): string
+    {
+        $reflection = new \ReflectionClass($this->command);
+        $method = $reflection->getMethod('formatTableValue');
+        $method->setAccessible(true);
+
+        return $method->invoke($this->command, $value);
+    }
+
+    protected function invokeFormatTableValueForDatatable(mixed $value): string
+    {
+        $reflection = new \ReflectionClass($this->command);
+        $method = $reflection->getMethod('formatTableValueForDatatable');
         $method->setAccessible(true);
 
         return $method->invoke($this->command, $value);

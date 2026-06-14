@@ -9,6 +9,7 @@ use Repat\CliCrud\Fields\Json;
 use Repat\CliCrud\Fields\Relations\Relation;
 use Repat\CliCrud\Resources\Resource;
 use Repat\CliCrud\Support\ColumnFormatter;
+use Repat\CliCrud\Support\ColumnTypeMapper;
 
 use function Termwind\terminal;
 
@@ -351,6 +352,10 @@ class DetailViewRenderer
             return $this->formatJsonValue($value, $field);
         }
 
+        if ($value instanceof \UnitEnum) {
+            return $value->name;
+        }
+
         return (string) $value;
     }
 
@@ -362,6 +367,8 @@ class DetailViewRenderer
                 return "\e[31m[Invalid JSON: ".json_last_error_msg()."]\e[39m";
             }
             $json = json_encode($decoded, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE);
+        } elseif ($value instanceof \UnitEnum) {
+            $json = json_encode($value->name, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE);
         } elseif (is_array($value) || is_object($value)) {
             $json = json_encode($value, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE);
         } else {
@@ -406,6 +413,10 @@ class DetailViewRenderer
 
         if ($value instanceof \DateTimeInterface) {
             return $value->format(config('cli-crud.display.date_format', 'Y-m-d H:i:s'));
+        }
+
+        if ($value instanceof \UnitEnum) {
+            return $value->name;
         }
 
         return (string) $value;

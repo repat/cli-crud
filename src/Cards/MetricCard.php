@@ -19,6 +19,6 @@ class MetricCard extends Card
     {
         $value = ($this->valueResolver)($model, $resource);
 
-        return $this->renderBox((string) $value);
+        return $this->renderBox($value instanceof \UnitEnum ? $value->name : (string) $value);
     }
 }

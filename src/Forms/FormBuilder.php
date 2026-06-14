@@ -14,6 +14,7 @@ use Repat\CliCrud\Fields\Select;
 use Repat\CliCrud\Fields\Text;
 use Repat\CliCrud\Fields\Textarea;
 use Repat\CliCrud\Resources\Resource;
+use Repat\CliCrud\Support\ColumnTypeMapper;
 
 use function Laravel\Prompts\confirm;
 use function Laravel\Prompts\password;
@@ -127,7 +128,7 @@ class FormBuilder
 
         $options = [
             'label' => $label,
-            'default' => (string) ($currentValue ?? $field->getDefault() ?? ''),
+            'default' => (string) (ColumnTypeMapper::scalarForValue($currentValue) ?? $field->getDefault() ?? ''),
         ];
 
         $promptOptions = $field->getPromptOptions();
@@ -142,7 +143,7 @@ class FormBuilder
     {
         $options = [
             'label' => $label,
-            'default' => (string) ($currentValue ?? $field->getDefault() ?? ''),
+            'default' => (string) (ColumnTypeMapper::scalarForValue($currentValue) ?? $field->getDefault() ?? ''),
         ];
 
         $promptOptions = $field->getPromptOptions();
@@ -157,14 +158,14 @@ class FormBuilder
     {
         return confirm(
             label: $label,
-            default: (bool) ($currentValue ?? $field->getDefault() ?? false)
+            default: (bool) (ColumnTypeMapper::scalarForValue($currentValue) ?? $field->getDefault() ?? false)
         );
     }
 
     protected function promptForSelect(Select $field, string $label, mixed $currentValue): mixed
     {
         $promptOptions = $field->getPromptOptions();
-        $default = $currentValue ?? $field->getDefault();
+        $default = ColumnTypeMapper::scalarForValue($currentValue) ?? $field->getDefault();
 
         $options = [
             'label' => $label,
@@ -182,7 +183,7 @@ class FormBuilder
     {
         $options = [
             'label' => $label,
-            'default' => (string) ($currentValue ?? $field->getDefault() ?? ''),
+            'default' => (string) (ColumnTypeMapper::scalarForValue($currentValue) ?? $field->getDefault() ?? ''),
         ];
 
         $promptOptions = $field->getPromptOptions();
@@ -200,7 +201,7 @@ class FormBuilder
     {
         return textarea(
             label: $label,
-            default: (string) ($currentValue ?? $field->getDefault() ?? '')
+            default: (string) (ColumnTypeMapper::scalarForValue($currentValue) ?? $field->getDefault() ?? '')
         );
     }
 
@@ -216,6 +217,8 @@ class FormBuilder
                 } else {
                     $default = $currentValue;
                 }
+            } elseif ($currentValue instanceof \UnitEnum) {
+                $default = json_encode(ColumnTypeMapper::scalarForValue($currentValue), JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE);
             } elseif (is_array($currentValue) || is_object($currentValue)) {
                 $default = json_encode($currentValue, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE);
             }

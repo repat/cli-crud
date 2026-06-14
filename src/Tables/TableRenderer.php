@@ -49,6 +49,10 @@ class TableRenderer
             return $value->format(config('cli-crud.display.date_format', 'Y-m-d H:i:s'));
         }
 
+        if ($value instanceof \UnitEnum) {
+            return $value->name;
+        }
+
         return (string) $value;
     }
 

@@ -12,6 +12,7 @@ use Repat\CliCrud\Forms\FormBuilder;
 use Repat\CliCrud\Resources\Resource;
 use Repat\CliCrud\Resources\ResourceRegistrar;
 use Repat\CliCrud\Support\ColumnFormatter;
+use Repat\CliCrud\Support\ColumnTypeMapper;
 use Repat\CliCrud\Tables\TableRenderer;
 use Repat\CliCrud\Views\AsciiArt;
 use Repat\CliCrud\Views\DetailViewRenderer;
@@ -327,6 +328,10 @@ class CrudCommand extends Command
             return $value->format(config('cli-crud.display.date_format', 'Y-m-d H:i:s'));
         }
 
+        if ($value instanceof \UnitEnum) {
+            return $value->name;
+        }
+
         return (string) $value;
     }
 
@@ -342,6 +347,10 @@ class CrudCommand extends Command
 
         if ($value instanceof \DateTimeInterface) {
             return $value->format(config('cli-crud.display.date_format', 'Y-m-d H:i:s'));
+        }
+
+        if ($value instanceof \UnitEnum) {
+            return $value->name;
         }
 
         return (string) $value;
@@ -568,8 +577,8 @@ class CrudCommand extends Command
         if (! empty($fields)) {
             $firstField = $fields[0];
             $value = $item->{$firstField->getName()};
-            if ($value) {
-                return (string) $value;
+            if ($value !== null && $value !== '') {
+                return ColumnTypeMapper::nameForValue($value);
             }
         }
 

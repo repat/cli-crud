@@ -51,7 +51,7 @@ class Chart
             $color = self::COLORS[$colorIndex % count(self::COLORS)];
 
             $paddedLabel = str_pad($label, $maxLabelLength);
-            $paddedValue = str_pad((string) $value, $maxValueLength, ' ', STR_PAD_LEFT);
+            $paddedValue = str_pad($value instanceof \UnitEnum ? $value->name : (string) $value, $maxValueLength, ' ', STR_PAD_LEFT);
 
             $output .= "{$paddedLabel} {$color}{$bar}".self::RESET." {$paddedValue}\n";
         }
@@ -121,7 +121,7 @@ class Chart
             $color = self::COLORS[$colorIndex % count(self::COLORS)];
 
             $paddedLabel = str_pad($label, $maxLabelLength);
-            $paddedValue = str_pad((string) $value, $maxValueLength, ' ', STR_PAD_LEFT);
+            $paddedValue = str_pad($value instanceof \UnitEnum ? $value->name : (string) $value, $maxValueLength, ' ', STR_PAD_LEFT);
 
             $output .= "{$paddedLabel} │{$color}{$bar}".self::RESET.str_repeat(' ', $barWidth - $barLength)."│ {$paddedValue}\n";
         }
