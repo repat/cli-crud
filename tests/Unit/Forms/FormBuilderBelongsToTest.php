@@ -150,7 +150,7 @@ class FormBuilderBelongsToTest extends TestCase
 
         $this->assertArrayHasKey('user_id', $rules);
         $this->assertArrayNotHasKey('user', $rules);
-        $this->assertContains('exists:users,id', $rules['user_id']);
+        $this->assertContains('nullable', $rules['user_id']);
     }
 
     public function test_build_validation_rules_respects_required(): void

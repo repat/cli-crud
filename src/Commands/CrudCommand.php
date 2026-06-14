@@ -114,10 +114,15 @@ class CrudCommand extends Command
 
         $options = [
             'list' => "List {$resource::getLabel()}",
-            'create' => "Create new {$resource::getSingularLabel()}",
-            'back' => 'Back to main menu',
-            'quit' => 'Quit',
         ];
+
+        if (! empty($resource::searchableFields())) {
+            $options['search'] = "Search {$resource::getLabel()}";
+        }
+
+        $options['create'] = "Create new {$resource::getSingularLabel()}";
+        $options['back'] = 'Back to main menu';
+        $options['quit'] = 'Quit';
 
         $action = select(
             label: "What would you like to do with {$resource::getLabel()}?",
@@ -126,10 +131,19 @@ class CrudCommand extends Command
 
         match ($action) {
             'list' => $this->showListView($resourceClass, 1),
+            'search' => $this->handleSearchAction($resourceClass),
             'create' => $this->showCreateForm($resourceClass),
             'back' => $this->handle(),
             'quit' => exit(0),
         };
+    }
+
+    protected function handleSearchAction(string $resourceClass): void
+    {
+        $resource = new $resourceClass;
+        $search = $this->promptForSearchTerm($resource::getLabel());
+
+        $this->showListView($resourceClass, 1, false, $search);
     }
 
     protected function showListView(string $resourceClass, int $page, bool $showTrashed = false, ?string $search = null): void
@@ -140,11 +154,6 @@ class CrudCommand extends Command
 
         if ($showTrashed && $resource::usesSoftDeletes()) {
             $query->onlyTrashed();
-        }
-
-        if ($search === null && ! empty($resource::searchableFields())) {
-            $search = $this->promptForSearchTerm($resource::getLabel());
-            $page = 1;
         }
 
         $query = $resource::searchUsing($query, $search ?? '');
@@ -195,6 +204,12 @@ class CrudCommand extends Command
         $columns = $resource::tableColumns();
         $modelInstance = $resource::getModelInstance();
         $casts = $modelInstance->getCasts();
+
+        // Exclude columns cast to array or json — they can't be displayed in a flat table
+        $columns = array_values(array_filter(
+            $columns,
+            fn ($col) => ! isset($casts[$col]) || ! in_array($casts[$col], ['array', 'json'], true)
+        ));
 
         $headers = array_map(fn ($col) => ColumnFormatter::format($col), $columns);
         $headerWidths = array_map(fn ($header) => mb_strlen($header), $headers);
@@ -372,7 +387,11 @@ class CrudCommand extends Command
         }
 
         if ($value instanceof \UnitEnum) {
-            return $value->name;
+            return "\e[2m[{$value->name}]\e[22m";
+        }
+
+        if (is_array($value)) {
+            return json_encode($value, JSON_UNESCAPED_UNICODE);
         }
 
         return (string) $value;
@@ -381,7 +400,7 @@ class CrudCommand extends Command
     protected function formatTableValueForDatatable(mixed $value): string
     {
         if (is_null($value)) {
-            return 'NULL';
+            return "\xE2\x80\x94";
         }
 
         if (is_bool($value)) {
@@ -394,6 +413,10 @@ class CrudCommand extends Command
 
         if ($value instanceof \UnitEnum) {
             return $value->name;
+        }
+
+        if (is_array($value)) {
+            return json_encode($value, JSON_UNESCAPED_UNICODE);
         }
 
         return (string) $value;

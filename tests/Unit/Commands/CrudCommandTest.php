@@ -112,7 +112,8 @@ class CrudCommandTest extends TestCase
     {
         $result = $this->invokeFormatTableValue(FormType::Draft);
 
-        $this->assertEquals('Draft', $result);
+        $this->assertStringContainsString('Draft', $result);
+        $this->assertStringContainsString("\e[2m", $result);
     }
 
     public function test_format_table_value_for_datatable_with_enum_returns_name(): void

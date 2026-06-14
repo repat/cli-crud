@@ -53,6 +53,10 @@ class TableRenderer
             return $value->name;
         }
 
+        if (is_array($value)) {
+            return json_encode($value, JSON_UNESCAPED_UNICODE);
+        }
+
         return (string) $value;
     }
 

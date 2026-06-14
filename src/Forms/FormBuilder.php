@@ -25,6 +25,8 @@ use function Laravel\Prompts\textarea;
 
 class FormBuilder
 {
+    public const NULL_VALUE = -1;
+
     /**
      * @param  array<Field|BelongsTo>  $fields
      */
@@ -283,14 +285,14 @@ class FormBuilder
                     : $relatedModel::limit(10)->pluck($displayField, 'id')->toArray();
 
                 if ($nullable) {
-                    $results = [0 => '— None —'] + $results;
+                    $results = [self::NULL_VALUE => '— None —'] + $results;
                 }
 
                 return $results;
             },
         );
 
-        return $nullable && $selected === 0 ? null : $selected;
+        return $nullable && $selected === self::NULL_VALUE ? null : $selected;
     }
 
     /**
@@ -307,17 +309,25 @@ class FormBuilder
 
                 // Build validation rules
                 $fieldRules = [];
+                $relatedModelInstance = $field->getResource()::getModelInstance();
+                $relatedTable = $relatedModelInstance->getTable();
 
                 // Add 'required' only if explicitly set
                 if ($field->isRequired()) {
                     $fieldRules[] = 'required';
+                    $fieldRules[] = 'exists:'.$relatedTable.',id';
                 } else {
                     $fieldRules[] = 'nullable';
-                }
+                    $fieldRules[] = function (string $attribute, mixed $value, \Closure $fail) use ($relatedModelInstance): void {
+                        if ($value === null || $value === self::NULL_VALUE || $value === (string) self::NULL_VALUE) {
+                            return;
+                        }
 
-                // Add exists rule
-                $relatedTable = $field->getResource()::getModelInstance()->getTable();
-                $fieldRules[] = 'exists:'.$relatedTable.',id';
+                        if (! $relatedModelInstance->newQuery()->where('id', $value)->exists()) {
+                            $fail(__('validation.exists', ['attribute' => $attribute]));
+                        }
+                    };
+                }
 
                 $rules[$foreignKey] = $fieldRules;
             } else {

@@ -131,7 +131,8 @@ class DetailViewRendererTest extends TestCase
 
         $formatted = $renderer->test_format_value(FormType::Draft);
 
-        $this->assertEquals('Draft', $formatted);
+        $this->assertStringContainsString('Draft', $formatted);
+        $this->assertStringContainsString("\e[2m", $formatted);
     }
 
     public function test_it_formats_enum_in_json_value(): void

@@ -354,7 +354,7 @@ class DetailViewRenderer
         }
 
         if ($value instanceof \UnitEnum) {
-            return $value->name;
+            return "\e[2m[{$value->name}]\e[22m";
         }
 
         if ($field instanceof Textarea && $field->isMarkdown()) {
@@ -456,7 +456,11 @@ class DetailViewRenderer
         }
 
         if ($value instanceof \UnitEnum) {
-            return $value->name;
+            return "\e[2m[{$value->name}]\e[22m";
+        }
+
+        if (is_array($value)) {
+            return json_encode($value, JSON_UNESCAPED_UNICODE);
         }
 
         return (string) $value;

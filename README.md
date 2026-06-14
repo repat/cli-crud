@@ -374,6 +374,21 @@ When enabled, the package checks:
 
 If no policy exists for a model, all actions are allowed by default.
 
+## Terminal Color Coding
+
+The package uses ANSI escape codes and Unicode characters to distinguish data types in the terminal output:
+
+| Value | Rendering | Example |
+|-------|-----------|---------|
+| **Null** | `—` (em dash) in the list view; `NULL` in gray in the detail view | `—` / `NULL` |
+| **Boolean** | `✓` (green) or `✗` (red) in the detail and ANSI table views; plain `✓` / `✗` in the datatable | `✓` / `✗` |
+| **Enum (PHP backed/unit)** | Faint gray with brackets: `[Draft]` | `[Draft]` |
+| **DateTime** | Formatted per `config('cli-crud.display.date_format')` (default `Y-m-d H:i:s`) | `2024-01-15 10:30:00` |
+| **JSON** | Syntax-highlighted: keys in cyan, strings in green, numbers in yellow, booleans/null in magenta | colored output |
+| **Validation errors** | Section header in red | `Validation errors:` |
+
+The detail view renders fields in a box layout with labels on the left and values on the right. Values that exceed the terminal width are word-wrapped. The list view (`datatable()`) supports Unicode characters but not ANSI escape codes, so booleans show as plain `✓`/`✗` and nulls as `—` (em dash) there.
+
 ## Field Validation
 
 The package validates that your field definitions match the database schema. If there's a mismatch, a `FieldMismatchException` is thrown.
