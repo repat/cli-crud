@@ -27,7 +27,6 @@ class CrudCommandTest extends TestCase
         $this->command = new CrudCommand(
             app(ResourceRegistrar::class),
             app(Authorizer::class),
-            app(TableRenderer::class),
             app(FormBuilder::class),
             app(DetailViewRenderer::class),
             app(ActionDispatcher::class)

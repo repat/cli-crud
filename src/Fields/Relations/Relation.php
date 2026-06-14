@@ -48,9 +48,6 @@ abstract class Relation
         return $this->resourceClass;
     }
 
-    /**
-     * @return class-string<resource>
-     */
     public function getResource(): Resource
     {
         return new $this->resourceClass;

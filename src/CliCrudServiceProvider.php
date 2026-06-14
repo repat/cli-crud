@@ -12,7 +12,6 @@ use Repat\CliCrud\Commands\MakeCliActionCommand;
 use Repat\CliCrud\Commands\MakeCliResourceCommand;
 use Repat\CliCrud\Forms\FormBuilder;
 use Repat\CliCrud\Resources\ResourceRegistrar;
-use Repat\CliCrud\Tables\TableRenderer;
 use Repat\CliCrud\Validation\FieldValidator;
 use Repat\CliCrud\Views\DetailViewRenderer;
 
@@ -33,10 +32,6 @@ class CliCrudServiceProvider extends ServiceProvider implements DeferrableProvid
             $enabled = (bool) config('cli-crud.authorization.enabled', true);
 
             return new Authorizer($enabled);
-        });
-
-        $this->app->singleton(TableRenderer::class, function ($app) {
-            return new TableRenderer;
         });
 
         $this->app->singleton(FormBuilder::class, function ($app) {
@@ -80,7 +75,6 @@ class CliCrudServiceProvider extends ServiceProvider implements DeferrableProvid
         return [
             ResourceRegistrar::class,
             Authorizer::class,
-            TableRenderer::class,
             FormBuilder::class,
             FieldValidator::class,
             DetailViewRenderer::class,

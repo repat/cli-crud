@@ -17,7 +17,6 @@ use Repat\CliCrud\Resources\Resource;
 use Repat\CliCrud\Resources\ResourceRegistrar;
 use Repat\CliCrud\Support\ColumnFormatter;
 use Repat\CliCrud\Support\ColumnTypeMapper;
-use Repat\CliCrud\Tables\TableRenderer;
 use Repat\CliCrud\Views\AsciiArt;
 use Repat\CliCrud\Views\DetailViewRenderer;
 
@@ -36,8 +35,6 @@ class CrudCommand extends Command
 
     protected Authorizer $authorizer;
 
-    protected TableRenderer $tableRenderer;
-
     protected FormBuilder $formBuilder;
 
     protected DetailViewRenderer $detailViewRenderer;
@@ -47,7 +44,6 @@ class CrudCommand extends Command
     public function __construct(
         ResourceRegistrar $registrar,
         Authorizer $authorizer,
-        TableRenderer $tableRenderer,
         FormBuilder $formBuilder,
         DetailViewRenderer $detailViewRenderer,
         ActionDispatcher $actionDispatcher
@@ -55,7 +51,6 @@ class CrudCommand extends Command
         parent::__construct();
         $this->registrar = $registrar;
         $this->authorizer = $authorizer;
-        $this->tableRenderer = $tableRenderer;
         $this->formBuilder = $formBuilder;
         $this->detailViewRenderer = $detailViewRenderer;
         $this->actionDispatcher = $actionDispatcher;

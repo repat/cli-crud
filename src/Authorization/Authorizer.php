@@ -18,153 +18,37 @@ class Authorizer
 
     public function viewAny(Resource $resource): bool
     {
-        if (! $this->enabled) {
-            return true;
-        }
-
-        if (! $this->hasAuthenticatedUser()) {
-            return true;
-        }
-
-        $modelClass = $resource::getModel();
-
-        if (! $this->hasPolicy($modelClass)) {
-            return true;
-        }
-
-        try {
-            return Gate::allows('viewAny', $modelClass);
-        } catch (\Exception $e) {
-            return true;
-        }
+        return $this->authorize('viewAny', $resource);
     }
 
     public function view(Resource $resource, Model $model): bool
     {
-        if (! $this->enabled) {
-            return true;
-        }
-
-        if (! $this->hasAuthenticatedUser()) {
-            return true;
-        }
-
-        if (! $this->hasPolicy(get_class($model))) {
-            return true;
-        }
-
-        try {
-            return Gate::allows('view', $model);
-        } catch (\Exception $e) {
-            return true;
-        }
+        return $this->authorize('view', $resource, $model);
     }
 
     public function create(Resource $resource): bool
     {
-        if (! $this->enabled) {
-            return true;
-        }
-
-        if (! $this->hasAuthenticatedUser()) {
-            return true;
-        }
-
-        $modelClass = $resource::getModel();
-
-        if (! $this->hasPolicy($modelClass)) {
-            return true;
-        }
-
-        try {
-            return Gate::allows('create', $modelClass);
-        } catch (\Exception $e) {
-            return true;
-        }
+        return $this->authorize('create', $resource);
     }
 
     public function update(Resource $resource, Model $model): bool
     {
-        if (! $this->enabled) {
-            return true;
-        }
-
-        if (! $this->hasAuthenticatedUser()) {
-            return true;
-        }
-
-        if (! $this->hasPolicy(get_class($model))) {
-            return true;
-        }
-
-        try {
-            return Gate::allows('update', $model);
-        } catch (\Exception $e) {
-            return true;
-        }
+        return $this->authorize('update', $resource, $model);
     }
 
     public function delete(Resource $resource, Model $model): bool
     {
-        if (! $this->enabled) {
-            return true;
-        }
-
-        if (! $this->hasAuthenticatedUser()) {
-            return true;
-        }
-
-        if (! $this->hasPolicy(get_class($model))) {
-            return true;
-        }
-
-        try {
-            return Gate::allows('delete', $model);
-        } catch (\Exception $e) {
-            return true;
-        }
+        return $this->authorize('delete', $resource, $model);
     }
 
     public function forceDelete(Resource $resource, Model $model): bool
     {
-        if (! $this->enabled) {
-            return true;
-        }
-
-        if (! $this->hasAuthenticatedUser()) {
-            return true;
-        }
-
-        if (! $this->hasPolicy(get_class($model))) {
-            return true;
-        }
-
-        try {
-            return Gate::allows('forceDelete', $model);
-        } catch (\Exception $e) {
-            return true;
-        }
+        return $this->authorize('forceDelete', $resource, $model);
     }
 
     public function restore(Resource $resource, Model $model): bool
     {
-        if (! $this->enabled) {
-            return true;
-        }
-
-        if (! $this->hasAuthenticatedUser()) {
-            return true;
-        }
-
-        if (! $this->hasPolicy(get_class($model))) {
-            return true;
-        }
-
-        try {
-            return Gate::allows('restore', $model);
-        } catch (\Exception $e) {
-            return true;
-        }
+        return $this->authorize('restore', $resource, $model);
     }
 
     public function authorizeViewAny(Resource $resource): void
@@ -213,6 +97,33 @@ class Authorizer
     {
         if (! $this->restore($resource, $model)) {
             throw UnauthorizedException::forAction('restore', get_class($model));
+        }
+    }
+
+    private function authorize(string $ability, Resource $resource, Model|string|null $subject = null): bool
+    {
+        if (! $this->enabled) {
+            return true;
+        }
+
+        if (! $this->hasAuthenticatedUser()) {
+            return true;
+        }
+
+        if ($subject === null) {
+            $subject = $resource::getModel();
+        }
+
+        $modelClass = $subject instanceof Model ? get_class($subject) : $subject;
+
+        if (! $this->hasPolicy($modelClass)) {
+            return true;
+        }
+
+        try {
+            return Gate::allows($ability, $subject);
+        } catch (\Exception $e) {
+            return false;
         }
     }
 

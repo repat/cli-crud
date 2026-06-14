@@ -71,7 +71,7 @@ class FormBuilder
                 }
             }
 
-            $validator = Validator::make($data, $this->buildValidationRules($fields, $introspectionModel));
+            $validator = Validator::make($data, $this->buildValidationRules($fields, $introspectionModel, $model));
 
             if ($validator->fails()) {
                 $errors = $validator->errors()->toArray();
@@ -263,6 +263,7 @@ class FormBuilder
         $resource = $field->getResource();
         $relatedModel = $resource::getModel();
         $displayField = $field->getDisplayField() ?? $resource::getTitle();
+        $nullable = ! $field->isRequired();
 
         if ($currentValue) {
             $currentModel = $relatedModel::find($currentValue);
@@ -271,21 +272,31 @@ class FormBuilder
             }
         }
 
-        return search(
+        $selected = search(
             label: $label,
-            options: fn (string $value) => strlen($value) > 0
-                ? $relatedModel::where($displayField, 'like', "%{$value}%")
-                    ->limit(10)
-                    ->pluck($displayField, 'id')
-                    ->toArray()
-                : $relatedModel::limit(10)->pluck($displayField, 'id')->toArray()
+            options: function (string $value) use ($relatedModel, $displayField, $nullable) {
+                $results = strlen($value) > 0
+                    ? $relatedModel::where($displayField, 'like', "%{$value}%")
+                        ->limit(10)
+                        ->pluck($displayField, 'id')
+                        ->toArray()
+                    : $relatedModel::limit(10)->pluck($displayField, 'id')->toArray();
+
+                if ($nullable) {
+                    $results = [0 => '— None —'] + $results;
+                }
+
+                return $results;
+            },
         );
+
+        return $nullable && $selected === 0 ? null : $selected;
     }
 
     /**
      * @param  array<Field|BelongsTo>  $fields
      */
-    protected function buildValidationRules(array $fields, ?Model $introspectionModel = null): array
+    protected function buildValidationRules(array $fields, ?Model $introspectionModel = null, ?Model $model = null): array
     {
         $rules = [];
 
@@ -310,7 +321,17 @@ class FormBuilder
 
                 $rules[$foreignKey] = $fieldRules;
             } else {
-                $rules[$field->getName()] = $field->getRules();
+                $fieldRules = $field->getRules();
+
+                // During edit, don't require password — empty means keep existing
+                if ($model !== null && $field instanceof Text && $field->isPassword()) {
+                    $fieldRules = array_values(array_filter(
+                        $fieldRules,
+                        fn ($rule) => $rule !== 'required'
+                    ));
+                }
+
+                $rules[$field->getName()] = $fieldRules;
             }
         }
 
@@ -319,7 +340,7 @@ class FormBuilder
 
     protected function displayErrors(array $errors): void
     {
-        echo "\n<fg=red>Validation errors:</>\n";
+        echo "\n\e[31mValidation errors:\e[39m\n";
         foreach ($errors as $field => $fieldErrors) {
             foreach ($fieldErrors as $error) {
                 echo "  - {$field}: {$error}\n";
