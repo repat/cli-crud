@@ -2,10 +2,13 @@
 
 namespace Repat\CliCrud;
 
+use Illuminate\Contracts\Bus\Dispatcher;
 use Illuminate\Contracts\Support\DeferrableProvider;
 use Illuminate\Support\ServiceProvider;
+use Repat\CliCrud\Actions\ActionDispatcher;
 use Repat\CliCrud\Authorization\Authorizer;
 use Repat\CliCrud\Commands\CrudCommand;
+use Repat\CliCrud\Commands\MakeCliActionCommand;
 use Repat\CliCrud\Commands\MakeCliResourceCommand;
 use Repat\CliCrud\Forms\FormBuilder;
 use Repat\CliCrud\Resources\ResourceRegistrar;
@@ -47,6 +50,10 @@ class CliCrudServiceProvider extends ServiceProvider implements DeferrableProvid
         $this->app->singleton(DetailViewRenderer::class, function ($app) {
             return new DetailViewRenderer;
         });
+
+        $this->app->singleton(ActionDispatcher::class, function ($app) {
+            return new ActionDispatcher($app->make(Dispatcher::class));
+        });
     }
 
     public function boot(): void
@@ -63,6 +70,7 @@ class CliCrudServiceProvider extends ServiceProvider implements DeferrableProvid
             $this->commands([
                 CrudCommand::class,
                 MakeCliResourceCommand::class,
+                MakeCliActionCommand::class,
             ]);
         }
     }
@@ -76,6 +84,7 @@ class CliCrudServiceProvider extends ServiceProvider implements DeferrableProvid
             FormBuilder::class,
             FieldValidator::class,
             DetailViewRenderer::class,
+            ActionDispatcher::class,
         ];
     }
 }

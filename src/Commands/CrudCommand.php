@@ -3,8 +3,12 @@
 namespace Repat\CliCrud\Commands;
 
 use Illuminate\Console\Command;
+use Illuminate\Database\Eloquent\Collection as EloquentCollection;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Collection;
+use Repat\CliCrud\Actions\Action;
+use Repat\CliCrud\Actions\ActionDispatcher;
+use Repat\CliCrud\Actions\ActionResponse;
 use Repat\CliCrud\Authorization\Authorizer;
 use Repat\CliCrud\Fields\Relations\BelongsTo;
 use Repat\CliCrud\Fields\Text;
@@ -38,12 +42,15 @@ class CrudCommand extends Command
 
     protected DetailViewRenderer $detailViewRenderer;
 
+    protected ActionDispatcher $actionDispatcher;
+
     public function __construct(
         ResourceRegistrar $registrar,
         Authorizer $authorizer,
         TableRenderer $tableRenderer,
         FormBuilder $formBuilder,
-        DetailViewRenderer $detailViewRenderer
+        DetailViewRenderer $detailViewRenderer,
+        ActionDispatcher $actionDispatcher
     ) {
         parent::__construct();
         $this->registrar = $registrar;
@@ -51,6 +58,7 @@ class CrudCommand extends Command
         $this->tableRenderer = $tableRenderer;
         $this->formBuilder = $formBuilder;
         $this->detailViewRenderer = $detailViewRenderer;
+        $this->actionDispatcher = $actionDispatcher;
     }
 
     public function handle(): int
@@ -240,6 +248,10 @@ class CrudCommand extends Command
             $options['edit'] = 'Edit';
         }
 
+        if (count($resource::getActions()) > 0) {
+            $options['run_action'] = 'Run action...';
+        }
+
         $isTrashed = $resource::usesSoftDeletes() && $item->trashed();
 
         if ($isTrashed) {
@@ -288,6 +300,12 @@ class CrudCommand extends Command
         if ($action === 'edit') {
             $this->showEditForm($resourceClass, $item, $search);
             $this->showListView($resourceClass, $page, $showTrashed, $search);
+
+            return;
+        }
+
+        if ($action === 'run_action') {
+            $this->runActionMenu($resourceClass, $item, $page, $totalPages, $showTrashed, $search);
 
             return;
         }
@@ -440,6 +458,10 @@ class CrudCommand extends Command
             $options['edit'] = 'Edit';
         }
 
+        if (count($resource::getActions()) > 0) {
+            $options['run_action'] = 'Run action...';
+        }
+
         $isTrashed = $resource::usesSoftDeletes() && $model->trashed();
 
         if ($isTrashed) {
@@ -468,6 +490,12 @@ class CrudCommand extends Command
 
         if ($action === 'edit') {
             $this->showEditForm($resourceClass, $model, $search);
+
+            return;
+        }
+
+        if ($action === 'run_action') {
+            $this->runActionMenu($resourceClass, $model, 1, 1, false, $search);
 
             return;
         }
@@ -613,5 +641,102 @@ class CrudCommand extends Command
         }
 
         return "#{$item->getKey()}";
+    }
+
+    protected function runActionMenu(string $resourceClass, Model $item, int $page, int $totalPages, bool $showTrashed, ?string $search): void
+    {
+        $resource = new $resourceClass;
+        $actions = $resource::getActions();
+
+        if (empty($actions)) {
+            $this->error('No actions are registered on this resource.');
+            $this->showListView($resourceClass, $page, $showTrashed, $search);
+
+            return;
+        }
+
+        $actionOptions = [];
+        foreach ($actions as $action) {
+            $actionOptions[spl_object_hash($action)] = $this->formatActionLabel($action);
+        }
+
+        $chosenHash = select(
+            label: 'Choose an action to run',
+            options: $actionOptions,
+        );
+
+        $action = $this->resolveActionByHash($actions, $chosenHash);
+
+        if ($action === null) {
+            $this->showListView($resourceClass, $page, $showTrashed, $search);
+
+            return;
+        }
+
+        if ($action->requiresConfirmation()) {
+            $label = $this->formatActionConfirmLabel($action, $resource, $item);
+
+            if (! confirm(label: $label, default: false)) {
+                $this->showListView($resourceClass, $page, $showTrashed, $search);
+
+                return;
+            }
+        }
+
+        $fieldValues = $action->askForFields();
+        $response = $this->actionDispatcher->dispatch($action, new EloquentCollection([$item]), $fieldValues);
+
+        $this->renderActionResponse($response, $action, $resource);
+
+        $this->showListView($resourceClass, $page, $showTrashed, $search);
+    }
+
+    protected function formatActionLabel(Action $action): string
+    {
+        return $action->isDestructive()
+            ? '[DESTRUCTIVE] '.$action->getName()
+            : $action->getName();
+    }
+
+    protected function formatActionConfirmLabel(Action $action, Resource $resource, Model $item): string
+    {
+        if ($action->getConfirmText() !== null) {
+            return $action->isDestructive()
+                ? '[DESTRUCTIVE] '.$action->getConfirmText()
+                : $action->getConfirmText();
+        }
+
+        $subject = $this->getItemLabel($item, $resource);
+        $question = "Run '{$action->getName()}' on {$subject}?";
+
+        return $action->isDestructive()
+            ? '[DESTRUCTIVE] '.$question
+            : $question;
+    }
+
+    protected function resolveActionByHash(array $actions, string $hash): ?Action
+    {
+        foreach ($actions as $action) {
+            if (spl_object_hash($action) === $hash) {
+                return $action;
+            }
+        }
+
+        return null;
+    }
+
+    protected function renderActionResponse(ActionResponse $response, Action $action, Resource $resource): void
+    {
+        $message = $response->getMessage();
+
+        if ($message === null || $message === '') {
+            return;
+        }
+
+        if ($response->isDanger()) {
+            $this->error("{$action->getName()}: {$message}");
+        } else {
+            $this->info("{$action->getName()}: {$message}");
+        }
     }
 }

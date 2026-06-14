@@ -2,13 +2,19 @@
 
 namespace Repat\CliCrud\Tests\Unit\Commands;
 
+use Illuminate\Database\Eloquent\Model;
+use Repat\CliCrud\Actions\Action;
+use Repat\CliCrud\Actions\ActionDispatcher;
 use Repat\CliCrud\Authorization\Authorizer;
 use Repat\CliCrud\Commands\CrudCommand;
 use Repat\CliCrud\Forms\FormBuilder;
 use Repat\CliCrud\Resources\ResourceRegistrar;
 use Repat\CliCrud\Tables\TableRenderer;
 use Repat\CliCrud\Tests\Fixtures\FormType;
+use Repat\CliCrud\Tests\Fixtures\User;
 use Repat\CliCrud\Tests\TestCase;
+use Repat\CliCrud\Tests\Unit\Actions\DestructiveActionFixture;
+use Repat\CliCrud\Tests\Unit\Actions\FooBarAction;
 use Repat\CliCrud\Views\DetailViewRenderer;
 
 class CrudCommandTest extends TestCase
@@ -23,7 +29,8 @@ class CrudCommandTest extends TestCase
             app(Authorizer::class),
             app(TableRenderer::class),
             app(FormBuilder::class),
-            app(DetailViewRenderer::class)
+            app(DetailViewRenderer::class),
+            app(ActionDispatcher::class)
         );
     }
 
@@ -129,6 +136,100 @@ class CrudCommandTest extends TestCase
         );
     }
 
+    public function test_format_action_label_adds_destructive_prefix(): void
+    {
+        $action = (new DestructiveActionFixture)
+            ->name('Destroy');
+
+        $this->assertEquals(
+            '[DESTRUCTIVE] Destroy',
+            $this->invokeFormatActionLabel($action)
+        );
+    }
+
+    public function test_format_action_label_plain_for_non_destructive(): void
+    {
+        $action = new FooBarAction;
+
+        $this->assertEquals('Foo Bar', $this->invokeFormatActionLabel($action));
+    }
+
+    public function test_format_action_confirm_label_uses_confirm_text_when_set(): void
+    {
+        $action = (new FooBarAction)
+            ->confirmText('Are you sure?');
+        $resource = new class extends \Repat\CliCrud\Resources\Resource
+        {
+            protected static string $model = User::class;
+
+            protected static string $label = 'Users';
+
+            protected static string $singularLabel = 'User';
+
+            public static function fields(): array
+            {
+                return [];
+            }
+
+            public static function tableColumns(): array
+            {
+                return ['id'];
+            }
+        };
+        $user = new User;
+
+        $this->assertEquals(
+            'Are you sure?',
+            $this->invokeFormatActionConfirmLabel($action, $resource, $user)
+        );
+    }
+
+    public function test_format_action_confirm_label_includes_destructive_prefix(): void
+    {
+        $action = (new DestructiveActionFixture)
+            ->name('Destroy');
+        $resource = new class extends \Repat\CliCrud\Resources\Resource
+        {
+            protected static string $model = User::class;
+
+            protected static string $label = 'Users';
+
+            protected static string $singularLabel = 'User';
+
+            public static function fields(): array
+            {
+                return [];
+            }
+
+            public static function tableColumns(): array
+            {
+                return ['id'];
+            }
+        };
+        $user = new User;
+
+        $label = $this->invokeFormatActionConfirmLabel($action, $resource, $user);
+
+        $this->assertStringStartsWith('[DESTRUCTIVE] ', $label);
+        $this->assertStringContainsString('Destroy', $label);
+    }
+
+    public function test_resolve_action_by_hash_finds_action(): void
+    {
+        $a = new FooBarAction;
+        $b = new DestructiveActionFixture;
+        $hashA = spl_object_hash($a);
+
+        $this->assertSame($a, $this->invokeResolveActionByHash([$a, $b], $hashA));
+    }
+
+    public function test_resolve_action_by_hash_returns_null_for_unknown_hash(): void
+    {
+        $a = new FooBarAction;
+
+        $this->assertNull($this->invokeResolveActionByHash([$a], 'unknown-hash'));
+    }
+
     protected function invokeCenterPad(string $value, int $width): string
     {
         $reflection = new \ReflectionClass($this->command);
@@ -172,5 +273,32 @@ class CrudCommandTest extends TestCase
         $method->setAccessible(true);
 
         return $method->invoke($this->command, $label, $search);
+    }
+
+    protected function invokeFormatActionLabel(Action $action): string
+    {
+        $reflection = new \ReflectionClass($this->command);
+        $method = $reflection->getMethod('formatActionLabel');
+        $method->setAccessible(true);
+
+        return $method->invoke($this->command, $action);
+    }
+
+    protected function invokeFormatActionConfirmLabel(Action $action, \Repat\CliCrud\Resources\Resource $resource, Model $item): string
+    {
+        $reflection = new \ReflectionClass($this->command);
+        $method = $reflection->getMethod('formatActionConfirmLabel');
+        $method->setAccessible(true);
+
+        return $method->invoke($this->command, $action, $resource, $item);
+    }
+
+    protected function invokeResolveActionByHash(array $actions, string $hash): ?Action
+    {
+        $reflection = new \ReflectionClass($this->command);
+        $method = $reflection->getMethod('resolveActionByHash');
+        $method->setAccessible(true);
+
+        return $method->invoke($this->command, $actions, $hash);
     }
 }

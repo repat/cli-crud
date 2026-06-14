@@ -5,6 +5,7 @@ namespace Repat\CliCrud\Resources;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
+use Repat\CliCrud\Actions\Action;
 use Repat\CliCrud\Cards\Card;
 use Repat\CliCrud\Fields\Field;
 use Repat\CliCrud\Fields\Relations\Relation;
@@ -140,5 +141,35 @@ abstract class Resource
     public static function getCards(): array
     {
         return static::cards();
+    }
+
+    /**
+     * Declare the actions available for this resource. Return an array
+     * of Action class strings or pre-built Action instances. The user
+     * picks one from the "Run action..." sub-menu in the list and
+     * detail views.
+     *
+     * @return array<int, class-string<Action>|Action>
+     */
+    public static function actions(): array
+    {
+        return [];
+    }
+
+    /**
+     * Resolve actions() to Action instances. Class strings are
+     * instantiated; instances are kept as-is.
+     *
+     * @return array<int, Action>
+     */
+    public static function getActions(): array
+    {
+        $resolved = [];
+
+        foreach (static::actions() as $action) {
+            $resolved[] = $action instanceof Action ? $action : new $action;
+        }
+
+        return $resolved;
     }
 }
