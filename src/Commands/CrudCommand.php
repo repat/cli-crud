@@ -630,14 +630,11 @@ class CrudCommand extends Command
 
     protected function getItemLabel(Model $item, Resource $resource): string
     {
-        $fields = $resource::getFields();
+        $titleField = $resource::getTitle();
+        $value = $item->{$titleField};
 
-        if (! empty($fields)) {
-            $firstField = $fields[0];
-            $value = $item->{$firstField->getName()};
-            if ($value !== null && $value !== '') {
-                return ColumnTypeMapper::nameForValue($value);
-            }
+        if ($value !== null && $value !== '') {
+            return ColumnTypeMapper::nameForValue($value);
         }
 
         return "#{$item->getKey()}";

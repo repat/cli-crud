@@ -18,6 +18,8 @@ abstract class Resource
 
     protected static string $singularLabel;
 
+    protected static ?string $title = null;
+
     /**
      * Optional explicit override for searchable column names. When set,
      * takes precedence over fields marked with ->searchable().
@@ -56,6 +58,29 @@ abstract class Resource
     public static function getSingularLabel(): string
     {
         return static::$singularLabel;
+    }
+
+    public static function getTitle(): string
+    {
+        $title = static::$title;
+
+        if ($title === null) {
+            throw new \RuntimeException(sprintf(
+                'Resource [%s] must define a $title property.',
+                static::class
+            ));
+        }
+
+        if (! \Illuminate\Support\Facades\Schema::hasColumn(static::getModelInstance()->getTable(), $title)) {
+            throw new \RuntimeException(sprintf(
+                'The column "%s" set as $title on resource [%s] does not exist in table "%s".',
+                $title,
+                static::class,
+                static::getModelInstance()->getTable()
+            ));
+        }
+
+        return $title;
     }
 
     /**

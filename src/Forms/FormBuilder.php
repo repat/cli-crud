@@ -262,7 +262,7 @@ class FormBuilder
 
         $resource = $field->getResource();
         $relatedModel = $resource::getModel();
-        $displayField = $field->getDisplayField() ?? $this->guessDisplayField($relatedModel);
+        $displayField = $field->getDisplayField() ?? $resource::getTitle();
 
         if ($currentValue) {
             $currentModel = $relatedModel::find($currentValue);
@@ -280,20 +280,6 @@ class FormBuilder
                     ->toArray()
                 : $relatedModel::limit(10)->pluck($displayField, 'id')->toArray()
         );
-    }
-
-    protected function guessDisplayField(string $modelClass): string
-    {
-        $model = new $modelClass;
-        $fillable = $model->getFillable();
-
-        foreach (['name', 'title', 'label', 'email'] as $field) {
-            if (in_array($field, $fillable)) {
-                return $field;
-            }
-        }
-
-        return $model->getKeyName();
     }
 
     /**

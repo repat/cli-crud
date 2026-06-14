@@ -14,6 +14,7 @@ class SearchableUserResource extends Resource
     protected static string $label = 'SearchableUsers';
 
     protected static string $singularLabel = 'SearchableUser';
+    protected static ?string $title = 'name';
 
     public static function fields(): array
     {

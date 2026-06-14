@@ -15,6 +15,7 @@ class PostResource extends Resource
     protected static string $label = 'Posts';
 
     protected static string $singularLabel = 'Post';
+    protected static ?string $title = 'title';
 
     public static function fields(): array
     {
