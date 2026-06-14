@@ -118,12 +118,37 @@ class JsonTest extends TestCase
         $this->assertStringContainsString('valid JSON', $result);
     }
 
-    public function test_validate_callback_rejects_empty_string(): void
+    public function test_validate_callback_rejects_empty_string_when_required(): void
     {
         $field = Json::make('Settings');
         $options = $field->getPromptOptions();
         $result = $options['validate']('');
         $this->assertNotNull($result);
+    }
+
+    public function test_validate_callback_accepts_empty_string_when_nullable(): void
+    {
+        $field = Json::make('Settings')->nullable();
+        $options = $field->getPromptOptions();
+        $result = $options['validate']('');
+        $this->assertNull($result);
+    }
+
+    public function test_validate_callback_still_rejects_invalid_json_when_nullable(): void
+    {
+        $field = Json::make('Settings')->nullable();
+        $options = $field->getPromptOptions();
+        $result = $options['validate']('{invalid}');
+        $this->assertNotNull($result);
+        $this->assertStringContainsString('valid JSON', $result);
+    }
+
+    public function test_validate_callback_accepts_valid_json_when_nullable(): void
+    {
+        $field = Json::make('Settings')->nullable();
+        $options = $field->getPromptOptions();
+        $result = $options['validate']('{"key": "value"}');
+        $this->assertNull($result);
     }
 
     public function test_get_name_derived_from_label(): void

@@ -18,6 +18,8 @@ abstract class Field
 
     protected mixed $default = null;
 
+    protected bool $showInForms = true;
+
     protected array $rules = [];
 
     public function __construct(string $label, ?string $name = null)
@@ -82,6 +84,18 @@ abstract class Field
     public function getDefault(): mixed
     {
         return $this->default;
+    }
+
+    public function notInForms(): static
+    {
+        $this->showInForms = false;
+
+        return $this;
+    }
+
+    public function isShownInForms(): bool
+    {
+        return $this->showInForms;
     }
 
     public function getRules(): array

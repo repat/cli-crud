@@ -99,6 +99,47 @@ class FieldTest extends TestCase
         $this->assertContains('date_format:Y-m-d', $rules);
     }
 
+    public function test_datetime_validate_callback_accepts_valid_date(): void
+    {
+        $field = DateTime::make('Created At', 'created_at');
+        $options = $field->getPromptOptions();
+        $result = $options['validate']('2024-01-15 10:30:00');
+        $this->assertNull($result);
+    }
+
+    public function test_datetime_validate_callback_rejects_invalid_date(): void
+    {
+        $field = DateTime::make('Created At', 'created_at');
+        $options = $field->getPromptOptions();
+        $result = $options['validate']('not-a-date');
+        $this->assertNotNull($result);
+        $this->assertStringContainsString('valid date', $result);
+    }
+
+    public function test_datetime_validate_callback_rejects_empty_string_by_default(): void
+    {
+        $field = DateTime::make('Created At', 'created_at');
+        $options = $field->getPromptOptions();
+        $result = $options['validate']('');
+        $this->assertNotNull($result);
+    }
+
+    public function test_datetime_validate_callback_accepts_empty_string_when_nullable(): void
+    {
+        $field = DateTime::make('Created At', 'created_at')->nullable();
+        $options = $field->getPromptOptions();
+        $result = $options['validate']('');
+        $this->assertNull($result);
+    }
+
+    public function test_datetime_validate_callback_still_rejects_invalid_when_nullable(): void
+    {
+        $field = DateTime::make('Created At', 'created_at')->nullable();
+        $options = $field->getPromptOptions();
+        $result = $options['validate']('not-a-date');
+        $this->assertNotNull($result);
+    }
+
     public function test_select_field_creation(): void
     {
         $field = Select::make('Status', 'status')->options([
@@ -168,5 +209,27 @@ class FieldTest extends TestCase
         $field = Text::make("User's Name");
 
         $this->assertEquals('users_name', $field->getName());
+    }
+
+    public function test_field_is_shown_in_forms_by_default(): void
+    {
+        $field = Text::make('Name', 'name');
+
+        $this->assertTrue($field->isShownInForms());
+    }
+
+    public function test_not_in_forms_hides_field_from_forms(): void
+    {
+        $field = Text::make('Name', 'name')->notInForms();
+
+        $this->assertFalse($field->isShownInForms());
+    }
+
+    public function test_not_in_forms_returns_static_for_chaining(): void
+    {
+        $field = Text::make('Name', 'name');
+        $result = $field->notInForms();
+
+        $this->assertSame($field, $result);
     }
 }

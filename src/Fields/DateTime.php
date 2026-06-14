@@ -28,9 +28,15 @@ class DateTime extends Field
     {
         return [
             'placeholder' => $this->format,
-            'validate' => fn ($value) => $this->isValidDate($value)
-                ? null
-                : "Please enter a valid date in format: {$this->format}",
+            'validate' => function ($value) {
+                if ($this->nullable && trim($value) === '') {
+                    return null;
+                }
+
+                return $this->isValidDate($value)
+                    ? null
+                    : "Please enter a valid date in format: {$this->format}";
+            },
         ];
     }
 

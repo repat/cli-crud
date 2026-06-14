@@ -34,6 +34,9 @@ class FormBuilder
         // For create scenarios, instantiate a new (unsaved) model from the resource
         $introspectionModel = $model ?? $this->getIntrospectionModel($resource);
 
+        // Remove fields that should not appear in forms
+        $fields = array_values(array_filter($fields, fn ($field) => ! $field instanceof Field || $field->isShownInForms()));
+
         // Pre-compute foreign keys for all BelongsTo fields
         $belongsToForeignKeys = [];
         foreach ($fields as $field) {
@@ -75,6 +78,17 @@ class FormBuilder
                 $this->displayErrors($errors);
             }
         } while ($validator->fails());
+
+        // Convert empty strings to null for nullable fields
+        foreach ($fields as $field) {
+            if ($field instanceof Field && ! $field instanceof BelongsTo && $field->isNullable()) {
+                $name = $field->getName();
+
+                if (isset($data[$name]) && $data[$name] === '') {
+                    $data[$name] = null;
+                }
+            }
+        }
 
         return $data;
     }

@@ -34,9 +34,15 @@ class Json extends Field
     public function getPromptOptions(): array
     {
         return [
-            'validate' => fn ($value) => json_decode($value) !== null || json_last_error() === JSON_ERROR_NONE
-                ? null
-                : 'Please enter valid JSON: '.json_last_error_msg(),
+            'validate' => function ($value) {
+                if ($this->nullable && trim($value) === '') {
+                    return null;
+                }
+
+                return json_decode($value) !== null || json_last_error() === JSON_ERROR_NONE
+                    ? null
+                    : 'Please enter valid JSON: '.json_last_error_msg();
+            },
         ];
     }
 }
