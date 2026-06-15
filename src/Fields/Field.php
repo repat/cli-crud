@@ -4,6 +4,9 @@ namespace Repat\CliCrud\Fields;
 
 use Repat\CliCrud\Concerns\DerivesName;
 
+/**
+ * @phpstan-consistent-constructor
+ */
 abstract class Field
 {
     use DerivesName;

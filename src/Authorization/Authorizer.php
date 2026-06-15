@@ -7,6 +7,21 @@ use Illuminate\Support\Facades\Gate;
 use Repat\CliCrud\Exceptions\UnauthorizedException;
 use Repat\CliCrud\Resources\Resource;
 
+/**
+ * Authorization helper for the CLI CRUD command.
+ *
+ * NOTE: This authorizer is designed for a CLI context where the runtime
+ * is typically not authenticated (no HTTP session, no implicit user).
+ * To avoid silently denying all operations, the following branches
+ * default to ALLOW:
+ *
+ *   1. `! $enabled` — when `cli-crud.authorization.enabled` is false.
+ *   2. `! hasAuthenticatedUser()` — when no user is logged in.
+ *   3. `! hasPolicy($modelClass)` — when the model has no policy class.
+ *
+ * For HTTP routes, write a dedicated policy / middleware. Do not reuse
+ * this authorizer for web requests.
+ */
 class Authorizer
 {
     protected bool $enabled;
@@ -100,6 +115,9 @@ class Authorizer
         }
     }
 
+    /**
+     * @internal CLI-only. Do not call from HTTP request handlers.
+     */
     private function authorize(string $ability, Resource $resource, Model|string|null $subject = null): bool
     {
         if (! $this->enabled) {

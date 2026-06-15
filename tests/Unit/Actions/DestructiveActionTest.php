@@ -2,11 +2,8 @@
 
 namespace Repat\CliCrud\Tests\Unit\Actions;
 
-use Illuminate\Database\Eloquent\Collection;
 use Repat\CliCrud\Actions\Action;
-use Repat\CliCrud\Actions\ActionFields;
-use Repat\CliCrud\Actions\ActionResponse;
-use Repat\CliCrud\Actions\DestructiveAction;
+use Repat\CliCrud\Tests\Fixtures\Actions\DestructiveActionFixture;
 use Repat\CliCrud\Tests\TestCase;
 
 class DestructiveActionTest extends TestCase
@@ -37,13 +34,5 @@ class DestructiveActionTest extends TestCase
         $action = (new DestructiveActionFixture)->destructive(false)->destructive();
 
         $this->assertTrue($action->isDestructive());
-    }
-}
-
-class DestructiveActionFixture extends DestructiveAction
-{
-    public function handle(Collection $models, ActionFields $fields): ActionResponse
-    {
-        return ActionResponse::message('destroyed');
     }
 }

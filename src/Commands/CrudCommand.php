@@ -111,7 +111,28 @@ class CrudCommand extends Command
     protected function showResourceMenu(string $resourceClass): void
     {
         $resource = new $resourceClass;
+        $options = $this->buildResourceMenuOptions($resource);
 
+        $action = (string) select(
+            label: "What would you like to do with {$resource::getLabel()}?",
+            options: $options
+        );
+
+        match ($action) {
+            'list' => $this->showListView($resourceClass, 1),
+            'search' => $this->handleSearchAction($resourceClass),
+            'create' => $this->showCreateForm($resourceClass),
+            'back' => $this->handle(),
+            'quit' => exit(0),
+            default => $this->handle(),
+        };
+    }
+
+    /**
+     * @return array<string, string>
+     */
+    protected function buildResourceMenuOptions(Resource $resource): array
+    {
         $options = [
             'list' => "List {$resource::getLabel()}",
         ];
@@ -124,24 +145,12 @@ class CrudCommand extends Command
         $options['back'] = 'Back to main menu';
         $options['quit'] = 'Quit';
 
-        $action = select(
-            label: "What would you like to do with {$resource::getLabel()}?",
-            options: $options
-        );
-
-        match ($action) {
-            'list' => $this->showListView($resourceClass, 1),
-            'search' => $this->handleSearchAction($resourceClass),
-            'create' => $this->showCreateForm($resourceClass),
-            'back' => $this->handle(),
-            'quit' => exit(0),
-        };
+        return $options;
     }
 
     protected function handleSearchAction(string $resourceClass): void
     {
-        $resource = new $resourceClass;
-        $search = $this->promptForSearchTerm($resource::getLabel());
+        $search = $this->promptForSearchTerm($resourceClass::getLabel());
 
         $this->showListView($resourceClass, 1, false, $search);
     }
@@ -262,6 +271,7 @@ class CrudCommand extends Command
             $options['run_action'] = 'Run action...';
         }
 
+        // @phpstan-ignore method.notFound (gated by usesSoftDeletes() above; trashed() comes from the SoftDeletes trait)
         $isTrashed = $resource::usesSoftDeletes() && $item->trashed();
 
         if ($isTrashed) {
@@ -290,7 +300,7 @@ class CrudCommand extends Command
         $options['back'] = 'Back to resource menu';
         $options['quit'] = 'Quit';
 
-        $action = select(
+        $action = (string) select(
             label: "What would you like to do with {$this->getItemLabel($item, $resource)}?",
             options: $options
         );
@@ -443,7 +453,13 @@ class CrudCommand extends Command
 
     protected function askForPageNumber(int $totalPages): int
     {
-        $page = (int) $this->ask("Enter page number (1-{$totalPages})", 1);
+        $page = (int) text(
+            label: "Enter page number (1-{$totalPages})",
+            default: '1',
+            validate: fn (string $value) => is_numeric($value) && (int) $value >= 1 && (int) $value <= $totalPages
+                ? null
+                : "Please enter a number between 1 and {$totalPages}.",
+        );
 
         return max(1, min($page, $totalPages));
     }
@@ -480,6 +496,7 @@ class CrudCommand extends Command
             $options['run_action'] = 'Run action...';
         }
 
+        // @phpstan-ignore method.notFound (gated by usesSoftDeletes() above; trashed() comes from the SoftDeletes trait)
         $isTrashed = $resource::usesSoftDeletes() && $model->trashed();
 
         if ($isTrashed) {
@@ -497,7 +514,7 @@ class CrudCommand extends Command
 
         $options['quit'] = 'Quit';
 
-        $action = select(
+        $action = (string) select(
             label: 'Select an action',
             options: $options
         );
@@ -523,6 +540,7 @@ class CrudCommand extends Command
             'force_delete' => $this->forceDeleteModel($resourceClass, $model),
             'restore' => $this->restoreModel($resourceClass, $model),
             'back' => null,
+            default => null,
         };
 
         $this->showListView($resourceClass, 1, false, $search);
@@ -641,6 +659,7 @@ class CrudCommand extends Command
         }
 
         if (confirm("Restore this {$resource::getSingularLabel()}?")) {
+            // @phpstan-ignore method.notFound (gated by usesSoftDeletes() in the caller; restore() comes from the SoftDeletes trait)
             $model->restore();
             $this->info("{$resource::getSingularLabel()} restored successfully!");
         }

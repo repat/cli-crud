@@ -9,12 +9,13 @@ use Repat\CliCrud\Authorization\Authorizer;
 use Repat\CliCrud\Commands\CrudCommand;
 use Repat\CliCrud\Forms\FormBuilder;
 use Repat\CliCrud\Resources\ResourceRegistrar;
-use Repat\CliCrud\Tables\TableRenderer;
+use Repat\CliCrud\Tests\Fixtures\Actions\DestructiveActionFixture;
+use Repat\CliCrud\Tests\Fixtures\Actions\FooBarAction;
 use Repat\CliCrud\Tests\Fixtures\FormType;
+use Repat\CliCrud\Tests\Fixtures\Resources\PostResource;
+use Repat\CliCrud\Tests\Fixtures\Resources\SearchableUserResource;
 use Repat\CliCrud\Tests\Fixtures\User;
 use Repat\CliCrud\Tests\TestCase;
-use Repat\CliCrud\Tests\Unit\Actions\DestructiveActionFixture;
-use Repat\CliCrud\Tests\Unit\Actions\FooBarAction;
 use Repat\CliCrud\Views\DetailViewRenderer;
 
 class CrudCommandTest extends TestCase
@@ -195,6 +196,7 @@ class CrudCommandTest extends TestCase
             protected static string $label = 'Users';
 
             protected static string $singularLabel = 'User';
+
             protected static ?string $title = 'name';
 
             public static function fields(): array
@@ -229,6 +231,131 @@ class CrudCommandTest extends TestCase
         $a = new FooBarAction;
 
         $this->assertNull($this->invokeResolveActionByHash([$a], 'unknown-hash'));
+    }
+
+    public function test_search_option_appears_when_searchable_fields_present(): void
+    {
+        $resource = new SearchableUserResource;
+
+        $options = $this->invokeBuildResourceMenuOptions($resource);
+
+        $this->assertSame(
+            ['list', 'search', 'create', 'back', 'quit'],
+            array_keys($options)
+        );
+        $this->assertSame('List SearchableUsers', $options['list']);
+        $this->assertSame('Search SearchableUsers', $options['search']);
+    }
+
+    public function test_search_option_absent_when_no_searchable_fields(): void
+    {
+        $resource = new PostResource;
+
+        $options = $this->invokeBuildResourceMenuOptions($resource);
+
+        $this->assertSame(
+            ['list', 'create', 'back', 'quit'],
+            array_keys($options)
+        );
+        $this->assertArrayNotHasKey('search', $options);
+    }
+
+    public function test_handle_search_action_with_empty_term_renders_unfiltered_list(): void
+    {
+        $captured = ['args' => null, 'prompted' => false];
+
+        $command = new class(app(ResourceRegistrar::class), app(Authorizer::class), app(FormBuilder::class), app(DetailViewRenderer::class), app(ActionDispatcher::class), $captured) extends CrudCommand
+        {
+            public function __construct(
+                ResourceRegistrar $registrar,
+                Authorizer $authorizer,
+                FormBuilder $formBuilder,
+                DetailViewRenderer $detailViewRenderer,
+                ActionDispatcher $actionDispatcher,
+                private array &$state
+            ) {
+                parent::__construct($registrar, $authorizer, $formBuilder, $detailViewRenderer, $actionDispatcher);
+            }
+
+            public function invokeHandleSearchAction(string $resourceClass): void
+            {
+                $this->handleSearchAction($resourceClass);
+            }
+
+            protected function promptForSearchTerm(string $label): ?string
+            {
+                $this->state['prompted'] = true;
+
+                return null;
+            }
+
+            protected function showListView(string $resourceClass, int $page, bool $showTrashed = false, ?string $search = null): void
+            {
+                $this->state['args'] = [
+                    'resourceClass' => $resourceClass,
+                    'page' => $page,
+                    'showTrashed' => $showTrashed,
+                    'search' => $search,
+                ];
+            }
+        };
+
+        $command->invokeHandleSearchAction(SearchableUserResource::class);
+
+        $this->assertTrue($captured['prompted']);
+        $this->assertIsArray($captured['args']);
+        $this->assertSame(
+            SearchableUserResource::class,
+            $captured['args']['resourceClass']
+        );
+        $this->assertSame(1, $captured['args']['page']);
+        $this->assertFalse($captured['args']['showTrashed']);
+        $this->assertNull($captured['args']['search']);
+    }
+
+    public function test_handle_search_action_with_term_passes_it_to_list_view(): void
+    {
+        $captured = ['args' => null];
+
+        $command = new class(app(ResourceRegistrar::class), app(Authorizer::class), app(FormBuilder::class), app(DetailViewRenderer::class), app(ActionDispatcher::class), $captured) extends CrudCommand
+        {
+            public function __construct(
+                ResourceRegistrar $registrar,
+                Authorizer $authorizer,
+                FormBuilder $formBuilder,
+                DetailViewRenderer $detailViewRenderer,
+                ActionDispatcher $actionDispatcher,
+                private array &$state
+            ) {
+                parent::__construct($registrar, $authorizer, $formBuilder, $detailViewRenderer, $actionDispatcher);
+            }
+
+            public function invokeHandleSearchAction(string $resourceClass): void
+            {
+                $this->handleSearchAction($resourceClass);
+            }
+
+            protected function promptForSearchTerm(string $label): ?string
+            {
+                return 'alice';
+            }
+
+            protected function showListView(string $resourceClass, int $page, bool $showTrashed = false, ?string $search = null): void
+            {
+                $this->state['args'] = [
+                    'resourceClass' => $resourceClass,
+                    'page' => $page,
+                    'showTrashed' => $showTrashed,
+                    'search' => $search,
+                ];
+            }
+        };
+
+        $command->invokeHandleSearchAction(SearchableUserResource::class);
+
+        $this->assertIsArray($captured['args']);
+        $this->assertSame('alice', $captured['args']['search']);
+        $this->assertSame(1, $captured['args']['page']);
     }
 
     protected function invokeCenterPad(string $value, int $width): string
@@ -301,5 +428,17 @@ class CrudCommandTest extends TestCase
         $method->setAccessible(true);
 
         return $method->invoke($this->command, $actions, $hash);
+    }
+
+    /**
+     * @return array<string, string>
+     */
+    protected function invokeBuildResourceMenuOptions(\Repat\CliCrud\Resources\Resource $resource): array
+    {
+        $reflection = new \ReflectionClass($this->command);
+        $method = $reflection->getMethod('buildResourceMenuOptions');
+        $method->setAccessible(true);
+
+        return $method->invoke($this->command, $resource);
     }
 }

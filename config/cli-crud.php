@@ -14,6 +14,7 @@ return [
         'relation_per_page' => 10,
     ],
     'authorization' => [
+        // See Repat\CliCrud\Authorization\Authorizer for the default-allow semantics.
         'enabled' => false,
     ],
     'display' => [

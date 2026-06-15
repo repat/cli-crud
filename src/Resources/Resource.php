@@ -5,6 +5,7 @@ namespace Repat\CliCrud\Resources;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
+use Illuminate\Support\Facades\Schema;
 use Repat\CliCrud\Actions\Action;
 use Repat\CliCrud\Cards\Card;
 use Repat\CliCrud\Fields\Field;
@@ -27,6 +28,15 @@ abstract class Resource
      * @var array<int, string>|null
      */
     protected static ?array $search = null;
+
+    /**
+     * Cache of resolved $title values, keyed by the calling subclass.
+     * Avoids re-running Schema::hasColumn() on every getTitle() call
+     * (e.g. in list rendering hot paths).
+     *
+     * @var array<class-string, string>
+     */
+    protected static array $resolvedTitles = [];
 
     /**
      * @return array<Field|Relation>
@@ -62,25 +72,31 @@ abstract class Resource
 
     public static function getTitle(): string
     {
-        $title = static::$title;
+        $class = static::class;
 
-        if ($title === null) {
-            throw new \RuntimeException(sprintf(
-                'Resource [%s] must define a $title property.',
-                static::class
-            ));
+        if (! isset(static::$resolvedTitles[$class])) {
+            $title = static::$title;
+
+            if ($title === null) {
+                throw new \RuntimeException(sprintf(
+                    'Resource [%s] must define a $title property.',
+                    $class
+                ));
+            }
+
+            if (! Schema::hasColumn(static::getModelInstance()->getTable(), $title)) {
+                throw new \RuntimeException(sprintf(
+                    'The column "%s" set as $title on resource [%s] does not exist in table "%s".',
+                    $title,
+                    $class,
+                    static::getModelInstance()->getTable()
+                ));
+            }
+
+            static::$resolvedTitles[$class] = $title;
         }
 
-        if (! \Illuminate\Support\Facades\Schema::hasColumn(static::getModelInstance()->getTable(), $title)) {
-            throw new \RuntimeException(sprintf(
-                'The column "%s" set as $title on resource [%s] does not exist in table "%s".',
-                $title,
-                static::class,
-                static::getModelInstance()->getTable()
-            ));
-        }
-
-        return $title;
+        return static::$resolvedTitles[$class];
     }
 
     /**

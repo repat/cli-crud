@@ -5,6 +5,9 @@ namespace Repat\CliCrud\Fields\Relations;
 use Repat\CliCrud\Concerns\DerivesName;
 use Repat\CliCrud\Resources\Resource;
 
+/**
+ * @phpstan-consistent-constructor
+ */
 abstract class Relation
 {
     use DerivesName;

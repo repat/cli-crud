@@ -4,13 +4,13 @@ namespace Repat\CliCrud\Views;
 
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Collection;
+use League\CommonMark\CommonMarkConverter;
 use Repat\CliCrud\Fields\Field;
 use Repat\CliCrud\Fields\Json;
 use Repat\CliCrud\Fields\Relations\Relation;
 use Repat\CliCrud\Fields\Textarea;
 use Repat\CliCrud\Resources\Resource;
 use Repat\CliCrud\Support\ColumnFormatter;
-use Repat\CliCrud\Support\ColumnTypeMapper;
 
 use function Termwind\terminal;
 
@@ -143,6 +143,7 @@ class DetailViewRenderer
             'top' => $this->output(self::BOX['top_left'].$horizontal.self::BOX['top_right']),
             'divider' => $this->output(self::BOX['divider_left'].$horizontal.self::BOX['divider_right']),
             'bottom' => $this->output(self::BOX['bottom_left'].$horizontal.self::BOX['bottom_right']),
+            default => null,
         };
     }
 
@@ -331,7 +332,7 @@ class DetailViewRenderer
     protected function renderPagination(int $page, int $totalPages): void
     {
         $text = "Page {$page} of {$totalPages}";
-        $padding = floor(($this->boxWidth - mb_strlen($text)) / 2);
+        $padding = (int) floor(($this->boxWidth - mb_strlen($text)) / 2);
         $this->output(str_repeat(' ', $padding).$text);
     }
 
@@ -361,18 +362,22 @@ class DetailViewRenderer
             return $this->formatMarkdownValue((string) $value);
         }
 
+        if (is_array($value)) {
+            return json_encode($value, JSON_UNESCAPED_UNICODE);
+        }
+
         return (string) $value;
     }
 
     protected function formatMarkdownValue(string $value): string
     {
-        if (! class_exists(\League\CommonMark\CommonMarkConverter::class)) {
+        if (! class_exists(CommonMarkConverter::class)) {
             throw new \RuntimeException(
                 'Markdown rendering requires league/commonmark. Install it with: composer require league/commonmark'
             );
         }
 
-        $converter = new \League\CommonMark\CommonMarkConverter([
+        $converter = new CommonMarkConverter([
             'html_input' => 'strip',
             'allow_unsafe_links' => false,
         ]);

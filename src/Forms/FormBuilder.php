@@ -83,7 +83,7 @@ class FormBuilder
 
         // Convert empty strings to null for nullable fields
         foreach ($fields as $field) {
-            if ($field instanceof Field && ! $field instanceof BelongsTo && $field->isNullable()) {
+            if ($field instanceof Field && $field->isNullable()) {
                 $name = $field->getName();
 
                 if (isset($data[$name]) && $data[$name] === '') {

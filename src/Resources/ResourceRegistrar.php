@@ -54,7 +54,7 @@ class ResourceRegistrar
     }
 
     /**
-     * @return array<class-string<resource>>
+     * @return array<class-string<Resource>>
      */
     public function getResources(): array
     {

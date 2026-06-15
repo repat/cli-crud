@@ -6,6 +6,7 @@ use Illuminate\Database\Eloquent\Collection;
 use Repat\CliCrud\Actions\Action;
 use Repat\CliCrud\Actions\ActionFields;
 use Repat\CliCrud\Actions\ActionResponse;
+use Repat\CliCrud\Tests\Fixtures\Actions\FooBarAction;
 use Repat\CliCrud\Tests\TestCase;
 
 class ActionTest extends TestCase
@@ -153,14 +154,6 @@ class ActionTest extends TestCase
         $prop = $reflection->getProperty('fields');
 
         $this->assertTrue($prop->isPublic());
-    }
-}
-
-class FooBarAction extends Action
-{
-    public function handle(Collection $models, ActionFields $fields): ActionResponse
-    {
-        return ActionResponse::message('ok');
     }
 }
 

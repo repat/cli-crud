@@ -19,6 +19,9 @@ use function Laravel\Prompts\select;
 use function Laravel\Prompts\text;
 use function Laravel\Prompts\textarea;
 
+/**
+ * @phpstan-consistent-constructor
+ */
 abstract class Action
 {
     use Conditionable;
