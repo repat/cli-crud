@@ -57,9 +57,12 @@ This opens an interactive menu where you can:
 
 - Select a resource
 - List records (paginated)
+- Search for records
 - View record details
 - Create new records
 - Delete records (soft delete, force delete, restore)
+- Run an action for (a) record(s)
+- View custom cards & charts for metrics
 
 ### Creating Resources
 
