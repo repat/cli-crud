@@ -58,7 +58,16 @@ abstract class Card
     protected function renderBox(string $content): string
     {
         $lines = explode("\n", $content);
-        $maxWidth = max(array_map('mb_strlen', $lines));
+
+        // Strip ANSI escape codes for width measurement — they take 0 visible
+        // columns but are counted by mb_strlen, which would otherwise inflate
+        // the box width and leave trailing padding inside it.
+        $plainLines = array_map(
+            fn (string $line) => preg_replace('/\e\[[0-9;]*m/', '', $line),
+            $lines
+        );
+
+        $maxWidth = max(array_map('mb_strlen', $plainLines));
         $maxWidth = max($maxWidth, mb_strlen($this->title) + 4);
         $boxWidth = min($maxWidth + 4, 120);
 
@@ -67,8 +76,10 @@ abstract class Card
         $output .= '│ '.str_pad($this->title, $boxWidth - 4).' │'."\n";
         $output .= '├'.str_repeat('─', $boxWidth - 2).'┤'."\n";
 
-        foreach ($lines as $line) {
-            $output .= '│ '.str_pad($line, $boxWidth - 4).' │'."\n";
+        foreach ($lines as $i => $line) {
+            $visibleLen = mb_strlen($plainLines[$i]);
+            $padding = max(0, $boxWidth - 4 - $visibleLen);
+            $output .= '│ '.$line.str_repeat(' ', $padding).' │'."\n";
         }
 
         $output .= '╰'.str_repeat('─', $boxWidth - 2).'╯';

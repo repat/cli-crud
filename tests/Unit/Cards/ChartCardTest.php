@@ -367,4 +367,108 @@ class ChartCardTest extends TestCase
             $cardWith->render($user, $resource),
         );
     }
+
+    public function test_rendered_box_width_matches_visible_chart_width(): void
+    {
+        // Regression test: Card::renderBox() must ignore ANSI escape codes
+        // when computing the box width. Otherwise colored chart bars would
+        // inflate the width and leave trailing padding inside the box.
+        $card = new ChartCard('Orders per Month', fn () => [
+            'Jan' => 42, 'Feb' => 38, 'Mar' => 55, 'Apr' => 61, 'May' => 48,
+        ]);
+
+        $user = User::create([
+            'name' => 'John',
+            'email' => 'john@example.com',
+            'is_active' => true,
+        ]);
+
+        $resource = new class extends Resource
+        {
+            protected static string $model = User::class;
+
+            protected static string $label = 'Users';
+
+            protected static string $singularLabel = 'User';
+
+            public static function fields(): array
+            {
+                return [];
+            }
+
+            public static function tableColumns(): array
+            {
+                return ['id'];
+            }
+        };
+
+        $output = $card->render($user, $resource);
+        $lines = explode("\n", $output);
+
+        // Strip ANSI from every line and confirm they all have the same
+        // visible length — the box width. This is the property that was
+        // broken before the fix.
+        $visibleLengths = array_map(
+            fn (string $line) => mb_strlen(preg_replace('/\e\[[0-9;]*m/', '', $line)),
+            $lines
+        );
+
+        $this->assertCount(1, array_unique($visibleLengths), 'All box lines must have the same visible width');
+    }
+
+    public function test_rendered_box_right_border_appears_soon_after_chart_content(): void
+    {
+        // The right `│` border should appear close to the chart content,
+        // not far to the right. Specifically: the middle content lines
+        // (those starting with `│ `) should end with ` │` at exactly the
+        // same column, and the box width should be just enough to fit
+        // the visible content.
+        $card = new ChartCard('Orders per Month', fn () => [
+            'Jan' => 42, 'Feb' => 38, 'Mar' => 55, 'Apr' => 61, 'May' => 48,
+        ]);
+
+        $user = User::create([
+            'name' => 'John',
+            'email' => 'john@example.com',
+            'is_active' => true,
+        ]);
+
+        $resource = new class extends Resource
+        {
+            protected static string $model = User::class;
+
+            protected static string $label = 'Users';
+
+            protected static string $singularLabel = 'User';
+
+            public static function fields(): array
+            {
+                return [];
+            }
+
+            public static function tableColumns(): array
+            {
+                return ['id'];
+            }
+        };
+
+        $output = $card->render($user, $resource);
+        $lines = explode("\n", $output);
+
+        $boxWidth = mb_strlen(preg_replace('/\e\[[0-9;]*m/', '', $lines[0]));
+
+        foreach ($lines as $line) {
+            $plain = preg_replace('/\e\[[0-9;]*m/', '', $line);
+
+            // Skip the top, bottom, and divider borders — they use
+            // corner/divider characters (╭/╰/├) instead of `│`.
+            if (str_starts_with($plain, '╭') || str_starts_with($plain, '╰') || str_starts_with($plain, '├')) {
+                continue;
+            }
+
+            $this->assertSame('│ ', mb_substr($plain, 0, 2), 'Each middle line should start with the left border');
+            $this->assertSame(' │', mb_substr($plain, -2), 'Each middle line should end with the right border');
+            $this->assertSame($boxWidth, mb_strlen($plain), 'Every middle line should have the same visible width as the box');
+        }
+    }
 }
