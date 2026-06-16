@@ -11,12 +11,14 @@ use Repat\CliCrud\Actions\ActionDispatcher;
 use Repat\CliCrud\Actions\ActionResponse;
 use Repat\CliCrud\Authorization\Authorizer;
 use Repat\CliCrud\Fields\Relations\BelongsTo;
+use Repat\CliCrud\Fields\Relations\MorphTo;
 use Repat\CliCrud\Fields\Text;
 use Repat\CliCrud\Forms\FormBuilder;
 use Repat\CliCrud\Resources\Resource;
 use Repat\CliCrud\Resources\ResourceRegistrar;
 use Repat\CliCrud\Support\ColumnFormatter;
 use Repat\CliCrud\Support\ColumnTypeMapper;
+use Repat\CliCrud\Support\Theme;
 use Repat\CliCrud\Views\AsciiArt;
 use Repat\CliCrud\Views\DetailViewRenderer;
 
@@ -385,11 +387,11 @@ class CrudCommand extends Command
     protected function formatTableValue(mixed $value): string
     {
         if (is_null($value)) {
-            return "\e[90mNULL\e[39m";
+            return Theme::null().'NULL'.Theme::resetFg();
         }
 
         if (is_bool($value)) {
-            return $value ? "\e[32m✓\e[39m" : "\e[31m✗\e[39m";
+            return $value ? Theme::true().'✓'.Theme::resetFg() : Theme::false().'✗'.Theme::resetFg();
         }
 
         if ($value instanceof \DateTimeInterface) {
@@ -397,7 +399,7 @@ class CrudCommand extends Command
         }
 
         if ($value instanceof \UnitEnum) {
-            return "\e[2m[{$value->name}]\e[22m";
+            return Theme::enum().'['.$value->name.']'.Theme::resetBold();
         }
 
         if (is_array($value)) {
@@ -562,9 +564,12 @@ class CrudCommand extends Command
         $fields = $resource::getFields();
         $relations = $resource::getRelations();
 
-        $belongsToRelations = array_filter($relations, fn ($r) => $r instanceof BelongsTo);
+        $fillableRelations = array_filter(
+            $relations,
+            fn ($r) => $r instanceof BelongsTo || $r instanceof MorphTo
+        );
 
-        $allFields = array_merge($fields, $belongsToRelations);
+        $allFields = array_merge($fields, $fillableRelations);
 
         $data = $this->formBuilder->build($allFields, null, $resource);
 
@@ -594,9 +599,12 @@ class CrudCommand extends Command
         $fields = $resource::getFields();
         $relations = $resource::getRelations();
 
-        $belongsToRelations = array_filter($relations, fn ($r) => $r instanceof BelongsTo);
+        $fillableRelations = array_filter(
+            $relations,
+            fn ($r) => $r instanceof BelongsTo || $r instanceof MorphTo
+        );
 
-        $allFields = array_merge($fields, $belongsToRelations);
+        $allFields = array_merge($fields, $fillableRelations);
 
         $data = $this->formBuilder->build($allFields, $model, $resource);
 

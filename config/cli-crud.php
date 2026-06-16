@@ -20,4 +20,10 @@ return [
     'display' => [
         'date_format' => 'Y-m-d H:i:s',
     ],
+
+    'themes' => [
+        // Built-in presets: 'dark' (default) | 'light'
+        // Individual keys override the preset — see Theme::value() for the full list.
+        'preset' => 'light',
+    ],
 ];

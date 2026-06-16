@@ -45,6 +45,30 @@ return [
 ];
 ```
 
+## Themes
+
+The package includes two built-in color presets. Switch between them in `config/cli-crud.php`:
+
+```php
+'themes' => [
+    'preset' => 'light', // 'dark' (default) or 'light'
+],
+```
+
+The **dark preset** (default) is optimized for terminals with dark backgrounds (white text on black). The **light preset** adjusts colors that are hard to read on white backgrounds (yellow, cyan, faint) to visible alternatives.
+
+Individual ANSI codes can be overridden by setting the corresponding key in the `themes` array. Any key set explicitly overrides the preset:
+
+```php
+'themes' => [
+    'preset' => 'dark',
+    'true' => "\e[92m",  // bright green for checkmarks
+    'false' => "\e[91m", // bright red for X marks
+],
+```
+
+Available theme keys: `null`, `true`, `false`, `enum`, `json_key`, `json_string`, `json_number`, `json_keyword`, `error`, `heading`, `invalid_json`, `code`, `blockquote`, `hr`, `chart`.
+
 ## Usage
 
 ### Running the CLI
@@ -68,6 +92,10 @@ This opens an interactive menu where you can:
 
 See [docs/RESOURCES.md](docs/RESOURCES.md) for creating resources, the generated structure, auto-generated fields from a model, and available properties.
 
+## Fields
+
+See [docs/FIELDS.md](docs/FIELDS.md) for all field types, relations, and options.
+
 ## Search
 
 See [docs/SEARCH.md](docs/SEARCH.md) for declaring searchable fields, the `$search` override, and custom search engine integration.
@@ -79,10 +107,6 @@ See [docs/ACTIONS.md](docs/ACTIONS.md) for creating and attaching Nova-style act
 ## Cards
 
 See [docs/CARDS.md](docs/CARDS.md) for Metric, Chart, and Custom cards in the detail view.
-
-## Fields
-
-See [docs/FIELDS.md](docs/FIELDS.md) for all field types, relations, and options.
 
 ## Authorization
 
@@ -110,7 +134,7 @@ If your model uses the `SoftDeletes` trait, the package automatically:
 
 ## Features
 
-### Implemented (v1)
+### Implemented
 
 - ✅ Resource-based architecture
 - ✅ Explicit field definitions with database validation
@@ -128,13 +152,11 @@ If your model uses the `SoftDeletes` trait, the package automatically:
 - ✅ `ShouldQueue` support for background action dispatch
 - ✅ `make:cli-action` generator with `--queued` and `--destructive` flags
 
-### Planned (v2)
+### Planned
 
 - BelongsToMany (pivot tables)
 - MorphTo/MorphMany relations
-
-### Planned (v3)
-
+- User Login (to use authorization)
 - Export (CSV, JSON)
 - Action log (audit trail)
 - Custom themes

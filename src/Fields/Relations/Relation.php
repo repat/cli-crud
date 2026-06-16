@@ -18,20 +18,20 @@ abstract class Relation
 
     protected string $resourceClass;
 
-    public function __construct(string $label, string $nameOrResource, ?string $resourceClass = null)
+    public function __construct(string $label, mixed $nameOrResource, mixed $resourceClass = null)
     {
         $this->label = $label;
 
         if ($resourceClass === null) {
-            $this->resourceClass = $nameOrResource;
+            $this->resourceClass = is_string($nameOrResource) ? $nameOrResource : '';
             $this->name = $this->deriveName($label);
         } else {
-            $this->name = $nameOrResource;
-            $this->resourceClass = $resourceClass;
+            $this->name = is_string($nameOrResource) ? $nameOrResource : '';
+            $this->resourceClass = is_string($resourceClass) ? $resourceClass : (is_array($resourceClass) && isset($resourceClass[0]) ? $resourceClass[0] : '');
         }
     }
 
-    public static function make(string $label, string $nameOrResource, ?string $resourceClass = null): static
+    public static function make(string $label, mixed $nameOrResource, mixed $resourceClass = null): static
     {
         return new static($label, $nameOrResource, $resourceClass);
     }

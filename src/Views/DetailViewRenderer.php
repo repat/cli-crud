@@ -11,6 +11,7 @@ use Repat\CliCrud\Fields\Relations\Relation;
 use Repat\CliCrud\Fields\Textarea;
 use Repat\CliCrud\Resources\Resource;
 use Repat\CliCrud\Support\ColumnFormatter;
+use Repat\CliCrud\Support\Theme;
 
 use function Termwind\terminal;
 
@@ -189,6 +190,10 @@ class DetailViewRenderer
         }
     }
 
+    // TODO: single-row relations (BelongsTo, MorphTo) currently render as a 1-row table
+    // here, which is technically functional but a UX wart. A future round should detect
+    // the relation type via $relation->getRelationType() and render single-row cases
+    // as a labeled field instead of a table. Pre-existing behavior, not introduced by morphTo/morphMany.
     protected function renderRelation(Model $model, Relation $relation): void
     {
         $relatedItems = $model->{$relation->getName()}()->get();
@@ -339,11 +344,11 @@ class DetailViewRenderer
     protected function formatValue(mixed $value, ?Field $field = null): string
     {
         if (is_null($value)) {
-            return "\e[90mNULL\e[39m";
+            return Theme::null().'NULL'.Theme::resetFg();
         }
 
         if (is_bool($value)) {
-            return $value ? "\e[32m✓\e[39m" : "\e[31m✗\e[39m";
+            return $value ? Theme::true().'✓'.Theme::resetFg() : Theme::false().'✗'.Theme::resetFg();
         }
 
         if ($value instanceof \DateTimeInterface) {
@@ -355,7 +360,7 @@ class DetailViewRenderer
         }
 
         if ($value instanceof \UnitEnum) {
-            return "\e[2m[{$value->name}]\e[22m";
+            return Theme::enum().'['.$value->name.']'.Theme::resetBold();
         }
 
         if ($field instanceof Textarea && $field->isMarkdown()) {
@@ -384,16 +389,16 @@ class DetailViewRenderer
 
         $html = $converter->convert($value)->getContent();
 
-        $html = preg_replace('/<pre><code[^>]*>(.*?)<\/code><\/pre>/is', "\n\e[38;5;244m$1\e[39m\n", $html);
-        $html = preg_replace('/<code[^>]*>(.*?)<\/code>/i', "\e[38;5;244m$1\e[39m", $html);
-        $html = preg_replace('/<strong>(.*?)<\/strong>/i', "\e[1m$1\e[22m", $html);
-        $html = preg_replace('/<em>(.*?)<\/em>/i', "\e[3m$1\e[23m", $html);
-        $html = preg_replace('/<hr\s*\/?>/i', "\n\e[90m".str_repeat('─', 40)."\e[39m\n", $html);
-        $html = preg_replace('/<a\s+[^>]*href="([^"]*)"[^>]*>(.*?)<\/a>/i', "$2 (\e[4m$1\e[24m)", $html);
+        $html = preg_replace('/<pre><code[^>]*>(.*?)<\/code><\/pre>/is', "\n".Theme::code().'$1'.Theme::resetFg()."\n", $html);
+        $html = preg_replace('/<code[^>]*>(.*?)<\/code>/i', Theme::code().'$1'.Theme::resetFg(), $html);
+        $html = preg_replace('/<strong>(.*?)<\/strong>/i', Theme::bold().'$1'.Theme::resetBold(), $html);
+        $html = preg_replace('/<em>(.*?)<\/em>/i', Theme::italic().'$1'.Theme::resetItalic(), $html);
+        $html = preg_replace('/<hr\s*\/?>/i', "\n".Theme::hr().str_repeat('─', 40).Theme::resetFg()."\n", $html);
+        $html = preg_replace('/<a\s+[^>]*href="([^"]*)"[^>]*>(.*?)<\/a>/i', "$2 (".Theme::linkUrl().'$1'.Theme::resetUnderline().')', $html);
 
-        $html = preg_replace('/<h[1-6]>(.*?)<\/h[1-6]>/i', "\e[1;33m$1\e[0m\n\n", $html);
+        $html = preg_replace('/<h[1-6]>(.*?)<\/h[1-6]>/i', Theme::heading().'$1'.Theme::resetAll()."\n\n", $html);
         $html = preg_replace('/<li[^>]*>(.*?)<\/li>/is', "  • $1\n", $html);
-        $html = preg_replace('/<blockquote[^>]*>(.*?)<\/blockquote>/is', "\e[38;5;242m$1\e[39m\n\n", $html);
+        $html = preg_replace('/<blockquote[^>]*>(.*?)<\/blockquote>/is', Theme::blockquote().'$1'.Theme::resetFg()."\n\n", $html);
         $html = str_ireplace('</p>', "\n\n", $html);
         $html = preg_replace('/<br\s*\/?>/i', "\n", $html);
 
@@ -409,7 +414,7 @@ class DetailViewRenderer
         if (is_string($value)) {
             $decoded = json_decode($value);
             if (json_last_error() !== JSON_ERROR_NONE) {
-                return "\e[31m[Invalid JSON: ".json_last_error_msg()."]\e[39m";
+                return Theme::invalidJson().'[Invalid JSON: '.json_last_error_msg().']'.Theme::resetFg();
             }
             $json = json_encode($decoded, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE);
         } elseif ($value instanceof \UnitEnum) {
@@ -428,16 +433,16 @@ class DetailViewRenderer
             '/("(?:[^"\\\\]|\\\\.)*")\s*:|("(?:[^"\\\\]|\\\\.)*")|(true|false|null)|(-?\d+(?:\.\d+)?(?:[eE][+-]?\d+)?)|([{}\[\],:]+)/',
             function ($matches) {
                 if (! empty($matches[1])) {
-                    return "\e[36m".$matches[1]."\e[39m:";
+                    return Theme::jsonKey().$matches[1].Theme::resetFg().':';
                 }
                 if (! empty($matches[2])) {
-                    return "\e[32m".$matches[2]."\e[39m";
+                    return Theme::jsonString().$matches[2].Theme::resetFg();
                 }
                 if (! empty($matches[3])) {
-                    return "\e[35m".$matches[3]."\e[39m";
+                    return Theme::jsonKeyword().$matches[3].Theme::resetFg();
                 }
                 if (! empty($matches[4])) {
-                    return "\e[33m".$matches[4]."\e[39m";
+                    return Theme::jsonNumber().$matches[4].Theme::resetFg();
                 }
 
                 return $matches[5];
@@ -461,7 +466,7 @@ class DetailViewRenderer
         }
 
         if ($value instanceof \UnitEnum) {
-            return "\e[2m[{$value->name}]\e[22m";
+            return Theme::enum().'['.$value->name.']'.Theme::resetBold();
         }
 
         if (is_array($value)) {

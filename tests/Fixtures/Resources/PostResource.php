@@ -3,6 +3,7 @@
 namespace Repat\CliCrud\Tests\Fixtures\Resources;
 
 use Repat\CliCrud\Fields\Relations\BelongsTo;
+use Repat\CliCrud\Fields\Relations\MorphMany;
 use Repat\CliCrud\Fields\Text;
 use Repat\CliCrud\Fields\Textarea;
 use Repat\CliCrud\Resources\Resource;
@@ -15,6 +16,7 @@ class PostResource extends Resource
     protected static string $label = 'Posts';
 
     protected static string $singularLabel = 'Post';
+
     protected static ?string $title = 'title';
 
     public static function fields(): array
@@ -23,6 +25,7 @@ class PostResource extends Resource
             BelongsTo::make('User', 'user', UserResource::class)->displayField('name'),
             Text::make('Title', 'title')->required(),
             Textarea::make('Content', 'content')->nullable(),
+            MorphMany::make('Comments', 'comments', CommentResource::class),
         ];
     }
 

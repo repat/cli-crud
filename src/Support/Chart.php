@@ -4,20 +4,6 @@ namespace Repat\CliCrud\Support;
 
 class Chart
 {
-    protected const COLORS = [
-        "\e[32m",
-        "\e[34m",
-        "\e[33m",
-        "\e[35m",
-        "\e[36m",
-        "\e[91m",
-        "\e[92m",
-        "\e[93m",
-        "\e[94m",
-        "\e[95m",
-    ];
-
-    protected const RESET = "\e[0m";
 
     protected const BAR_CHAR = '█';
 
@@ -48,12 +34,12 @@ class Chart
             $bar = str_repeat(self::BAR_CHAR, $barLength).str_repeat(self::BAR_EMPTY, $barWidth - $barLength);
 
             $colorIndex = array_search($label, array_keys($data));
-            $color = self::COLORS[$colorIndex % count(self::COLORS)];
+            $color = Theme::chartColors()[$colorIndex % count(Theme::chartColors())];
 
             $paddedLabel = str_pad($label, $maxLabelLength);
             $paddedValue = str_pad($value instanceof \UnitEnum ? $value->name : (string) $value, $maxValueLength, ' ', STR_PAD_LEFT);
 
-            $output .= "{$paddedLabel} {$color}{$bar}".self::RESET." {$paddedValue}\n";
+            $output .= "{$paddedLabel} {$color}{$bar}".Theme::resetAll()." {$paddedValue}\n";
         }
 
         return $output;
@@ -82,12 +68,12 @@ class Chart
             $bar = str_repeat(self::BAR_CHAR, $barLength);
 
             $colorIndex = array_search($label, array_keys($data));
-            $color = self::COLORS[$colorIndex % count(self::COLORS)];
+            $color = Theme::chartColors()[$colorIndex % count(Theme::chartColors())];
 
             $paddedLabel = str_pad($label, $maxLabelLength);
             $percentStr = sprintf('%5.1f%%', $percentage);
 
-            $output .= "{$color}".self::BULLET.self::RESET." {$paddedLabel} {$percentStr} {$color}{$bar}".self::RESET."\n";
+            $output .= "{$color}".self::BULLET.Theme::resetAll()." {$paddedLabel} {$percentStr} {$color}{$bar}".Theme::resetAll()."\n";
         }
 
         return $output;
@@ -118,12 +104,12 @@ class Chart
             $bar = str_repeat(self::BAR_CHAR, $barLength);
 
             $colorIndex = array_search($label, array_keys($data));
-            $color = self::COLORS[$colorIndex % count(self::COLORS)];
+            $color = Theme::chartColors()[$colorIndex % count(Theme::chartColors())];
 
             $paddedLabel = str_pad($label, $maxLabelLength);
             $paddedValue = str_pad($value instanceof \UnitEnum ? $value->name : (string) $value, $maxValueLength, ' ', STR_PAD_LEFT);
 
-            $output .= "{$paddedLabel} │{$color}{$bar}".self::RESET.str_repeat(' ', $barWidth - $barLength)."│ {$paddedValue}\n";
+            $output .= "{$paddedLabel} │{$color}{$bar}".Theme::resetAll().str_repeat(' ', $barWidth - $barLength)."│ {$paddedValue}\n";
         }
 
         return $output;

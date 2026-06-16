@@ -10,11 +10,14 @@ use Repat\CliCrud\Fields\Field;
 use Repat\CliCrud\Fields\Json;
 use Repat\CliCrud\Fields\Number;
 use Repat\CliCrud\Fields\Relations\BelongsTo;
+use Repat\CliCrud\Fields\Relations\MorphTo;
 use Repat\CliCrud\Fields\Select;
 use Repat\CliCrud\Fields\Text;
 use Repat\CliCrud\Fields\Textarea;
 use Repat\CliCrud\Resources\Resource;
 use Repat\CliCrud\Support\ColumnTypeMapper;
+use Repat\CliCrud\Support\Theme;
+use Repat\CliCrud\Validation\MorphExists;
 
 use function Laravel\Prompts\confirm;
 use function Laravel\Prompts\password;
@@ -28,7 +31,7 @@ class FormBuilder
     public const NULL_VALUE = -1;
 
     /**
-     * @param  array<Field|BelongsTo>  $fields
+     * @param  array<Field|BelongsTo|MorphTo>  $fields
      */
     public function build(array $fields, ?Model $model = null, ?Resource $resource = null): array
     {
@@ -39,11 +42,17 @@ class FormBuilder
         // Remove fields that should not appear in forms
         $fields = array_values(array_filter($fields, fn ($field) => ! $field instanceof Field || $field->isShownInForms()));
 
-        // Pre-compute foreign keys for all BelongsTo fields
+        // Pre-compute foreign keys for all BelongsTo fields and morph columns for all MorphTo fields
         $belongsToForeignKeys = [];
+        $morphToColumns = [];
         foreach ($fields as $field) {
             if ($field instanceof BelongsTo) {
                 $belongsToForeignKeys[$field->getName()] = $field->getForeignKey($introspectionModel);
+            } elseif ($field instanceof MorphTo) {
+                $morphToColumns[$field->getName()] = [
+                    'type' => $field->getTypeColumn($introspectionModel),
+                    'id' => $field->getIdColumn($introspectionModel),
+                ];
             }
         }
 
@@ -66,6 +75,17 @@ class FormBuilder
 
                     // Store using foreign key name
                     $data[$foreignKey] = $value;
+                } elseif ($field instanceof MorphTo) {
+                    $columns = $morphToColumns[$field->getName()];
+                    $currentType = $data[$columns['type']] ?? ($model ? $model->{$columns['type']} : null);
+                    $currentId = $data[$columns['id']] ?? ($model ? $model->{$columns['id']} : null);
+                    $typeError = $errors[$columns['type']] ?? null;
+                    $idError = $errors[$columns['id']] ?? null;
+
+                    $result = $this->promptForMorphTo($field, $currentType, $currentId, $typeError, $idError);
+
+                    $data[$columns['type']] = $result['type'];
+                    $data[$columns['id']] = $result['id'];
                 } else {
                     $currentValue = $data[$field->getName()] ?? ($model ? $model->{$field->getName()} : null);
                     $value = $this->promptForField($field, $currentValue, $errors[$field->getName()] ?? null);
@@ -296,7 +316,92 @@ class FormBuilder
     }
 
     /**
-     * @param  array<Field|BelongsTo>  $fields
+     * Two-step polymorphic prompt: pick the morph type, then the related record.
+     *
+     * @return array{type: string|null, id: string|int|null}
+     */
+    protected function promptForMorphTo(
+        MorphTo $field,
+        mixed $currentType,
+        mixed $currentId,
+        array|string|null $typeError = null,
+        array|string|null $idError = null,
+    ): array {
+        $resources = $field->getResources();
+        $typeOptions = [];
+        foreach ($resources as $resource) {
+            $typeOptions[$resource::class] = $resource::getLabel();
+        }
+
+        $defaultResourceClass = null;
+        if ($currentType !== null) {
+            $currentTypeStr = (string) $currentType;
+            foreach ($resources as $resource) {
+                $modelClass = $resource::getModel();
+                if ($currentTypeStr === $modelClass || $currentTypeStr === $modelClass::getMorphClass()) {
+                    $defaultResourceClass = $resource::class;
+                    break;
+                }
+            }
+        }
+
+        $typeLabel = "{$field->getLabel()} type";
+        if ($typeError) {
+            $typeErrorText = is_array($typeError) ? implode(', ', $typeError) : $typeError;
+            $typeLabel .= " <fg=red>({$typeErrorText})</>";
+        }
+
+        $typeOptionsForSelect = $defaultResourceClass !== null
+            ? [$defaultResourceClass => $typeOptions[$defaultResourceClass] ?? $defaultResourceClass]
+            : $typeOptions;
+
+        $selectedResourceClass = $defaultResourceClass !== null
+            ? $defaultResourceClass
+            : (string) select(label: $typeLabel, options: $typeOptionsForSelect);
+
+        $resource = new $selectedResourceClass;
+        $relatedModel = $resource::getModel();
+        $displayField = $field->getDisplayField() ?? $resource::getTitle();
+        $nullable = ! $field->isRequired();
+
+        $idLabel = $field->getLabel();
+        if ($idError) {
+            $idErrorText = is_array($idError) ? implode(', ', $idError) : $idError;
+            $idLabel .= " <fg=red>({$idErrorText})</>";
+        }
+        if ($currentId) {
+            $currentModel = $relatedModel::find($currentId);
+            if ($currentModel instanceof Model) {
+                $idLabel .= " <fg=gray>(currently: {$currentModel->{$displayField}})</>";
+            }
+        }
+
+        $selectedId = search(
+            label: $idLabel,
+            options: function (string $value) use ($relatedModel, $displayField, $nullable) {
+                $results = strlen($value) > 0
+                    ? $relatedModel::where($displayField, 'like', "%{$value}%")
+                        ->limit(10)
+                        ->pluck($displayField, 'id')
+                        ->toArray()
+                    : $relatedModel::limit(10)->pluck($displayField, 'id')->toArray();
+
+                if ($nullable) {
+                    $results = [self::NULL_VALUE => '— None —'] + $results;
+                }
+
+                return $results;
+            },
+        );
+
+        $id = ($nullable && $selectedId === self::NULL_VALUE) ? null : $selectedId;
+        $type = $relatedModel::getMorphClass();
+
+        return ['type' => $id === null ? null : $type, 'id' => $id];
+    }
+
+    /**
+     * @param  array<Field|BelongsTo|MorphTo>  $fields
      */
     protected function buildValidationRules(array $fields, ?Model $introspectionModel = null, ?Model $model = null): array
     {
@@ -330,6 +435,20 @@ class FormBuilder
                 }
 
                 $rules[$foreignKey] = $fieldRules;
+            } elseif ($field instanceof MorphTo) {
+                $typeColumn = $field->getTypeColumn($introspectionModel);
+                $idColumn = $field->getIdColumn($introspectionModel);
+                $morphClassStrings = $field->getMorphClassStrings();
+
+                $typeRules = $field->isRequired() ? ['required'] : ['nullable'];
+                $typeRules[] = 'string';
+                $typeRules[] = 'in:'.implode(',', $morphClassStrings);
+
+                $idRules = $field->isRequired() ? ['required'] : ['nullable'];
+                $idRules[] = new MorphExists($typeColumn, $idColumn);
+
+                $rules[$typeColumn] = $typeRules;
+                $rules[$idColumn] = $idRules;
             } else {
                 $fieldRules = $field->getRules();
 
@@ -350,7 +469,7 @@ class FormBuilder
 
     protected function displayErrors(array $errors): void
     {
-        echo "\n\e[31mValidation errors:\e[39m\n";
+        echo "\n".Theme::error()."Validation errors:".Theme::resetFg()."\n";
         foreach ($errors as $field => $fieldErrors) {
             foreach ($fieldErrors as $error) {
                 echo "  - {$field}: {$error}\n";
