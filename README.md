@@ -64,7 +64,7 @@ This opens an interactive menu where you can:
 - Run an action for (a) record(s)
 - View custom cards & charts for metrics
 
-### Creating Resources
+## Resources
 
 See [docs/RESOURCES.md](docs/RESOURCES.md) for creating resources, the generated structure, auto-generated fields from a model, and available properties.
 
@@ -119,6 +119,9 @@ See [docs/AUTHORIZATION.md](docs/AUTHORIZATION.md) for enabling Laravel Gates/Po
 
 - Export (CSV, JSON)
 - Action log (audit trail)
+- Dashboards
+- TUI testing
+- Code Cleanup
 
 ## Testing
 
