@@ -45,30 +45,6 @@ return [
 ];
 ```
 
-## Themes
-
-The package includes two built-in color presets. Switch between them in `config/cli-crud.php`:
-
-```php
-'themes' => [
-    'preset' => 'light', // 'dark' (default) or 'light'
-],
-```
-
-The **dark preset** (default) is optimized for terminals with dark backgrounds (white text on black). The **light preset** adjusts colors that are hard to read on white backgrounds (yellow, cyan, faint) to visible alternatives.
-
-Individual ANSI codes can be overridden by setting the corresponding key in the `themes` array. Any key set explicitly overrides the preset:
-
-```php
-'themes' => [
-    'preset' => 'dark',
-    'true' => "\e[92m",  // bright green for checkmarks
-    'false' => "\e[91m", // bright red for X marks
-],
-```
-
-Available theme keys: `null`, `true`, `false`, `enum`, `json_key`, `json_string`, `json_number`, `json_keyword`, `error`, `heading`, `invalid_json`, `code`, `blockquote`, `hr`, `chart`.
-
 ## Usage
 
 ### Running the CLI
@@ -112,37 +88,17 @@ See [docs/CARDS.md](docs/CARDS.md) for Metric, Chart, and Custom cards in the de
 
 See [docs/AUTHORIZATION.md](docs/AUTHORIZATION.md) for enabling Laravel Gates/Policies integration.
 
-## Terminal Color Coding
-
-The package uses ANSI escape codes and Unicode characters to distinguish data types in the terminal output:
-
-| Value | Rendering | Example |
-|-------|-----------|---------|
-| **Null** | `—` (em dash) in the list view; `NULL` in gray in the detail view | `—` / `NULL` |
-| **Boolean** | `✓` (green) or `✗` (red) in the detail and ANSI table views; plain `✓` / `✗` in the datatable | `✓` / `✗` |
-| **Enum (PHP backed/unit)** | Faint gray with brackets: `[Draft]` | `[Draft]` |
-| **DateTime** | Formatted per `config('cli-crud.display.date_format')` (default `Y-m-d H:i:s`) | `2024-01-15 10:30:00` |
-| **JSON** | Syntax-highlighted: keys in cyan, strings in green, numbers in yellow, booleans/null in magenta | colored output |
-
-## Soft Deletes
-
-If your model uses the `SoftDeletes` trait, the package automatically:
-
-- Shows a toggle to view trashed records
-- Provides "Restore" and "Force Delete" actions for trashed records
-- Performs soft delete by default
-
 ## Features
 
 ### Implemented
 
 - ✅ Resource-based architecture
 - ✅ Explicit field definitions with database validation
-- ✅ Laravel Gates/Policies integration
+- ✅ Laravel Gates/Policies integration with interactive login prompt
 - ✅ Soft delete + force delete + restore
-- ✅ Relations (BelongsTo, HasOne, HasMany) in detail view
+- ✅ All Eloquent relationship types (HasOne, HasMany, BelongsTo, BelongsToMany, HasManyThrough, MorphOne, MorphMany, MorphTo, MorphToMany, MorphedByMany)
 - ✅ Paginated list view with page numbers
-- ✅ Inline search for BelongsTo selects
+- ✅ Inline search for BelongsTo selects with "— None —" option for nullable relations
 - ✅ Auto-discovery of resources
 - ✅ List-view search with configurable searchable fields
 - ✅ `searchUsing()` hook for Laravel Scout / Algolia / Meilisearch
@@ -151,15 +107,18 @@ If your model uses the `SoftDeletes` trait, the package automatically:
 - ✅ Destructive action variant with extra confirmation
 - ✅ `ShouldQueue` support for background action dispatch
 - ✅ `make:cli-action` generator with `--queued` and `--destructive` flags
+- ✅ `make:cli-resource --model` for schema-based field generation
+- ✅ Markdown rendering for Textarea fields (requires `league/commonmark`)
+- ✅ Cards (Metric, Chart, Custom) with before/after positioning
+- ✅ Chart types: bar, horizontal bar, and scatter
+- ✅ Chart percentage mode (`->percentage()`)
+- ✅ Customizable theme presets (dark/light)
+- ✅ `->notInForms()` to exclude fields from create/edit forms
 
 ### Planned
 
-- BelongsToMany (pivot tables)
-- MorphTo/MorphMany relations
-- User Login (to use authorization)
 - Export (CSV, JSON)
 - Action log (audit trail)
-- Custom themes
 
 ## Testing
 

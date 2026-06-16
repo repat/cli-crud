@@ -2,7 +2,7 @@
 
 Resources are the central concept of cli-crud — they map an Eloquent model to a CLI interface with fields, columns, relations, and actions.
 
-### Creating Resources
+## Creating Resources
 
 Generate a new resource:
 
@@ -57,7 +57,15 @@ class UserResource extends Resource
 | `$singularLabel` | Yes | Singular display name |
 | `$title` | Yes | Column used to identify records in menus and BelongsTo searches |
 
-### Auto-generating fields from a model
+### Soft Deletes
+
+If your model uses the `SoftDeletes` trait, the package automatically:
+
+- Shows a toggle to view trashed records
+- Provides "Restore" and "Force Delete" actions for trashed records
+- Performs soft delete by default
+
+## Auto-generating fields from a model
 
 Pass the `--model` option to read the database schema and generate fields with correct types:
 
