@@ -234,4 +234,137 @@ class ChartCardTest extends TestCase
         $this->assertStringContainsString('╰', $output);
         $this->assertStringContainsString('╯', $output);
     }
+
+    public function test_default_show_percentages_is_false(): void
+    {
+        $card = new ChartCard('Test', fn () => ['A' => 1]);
+
+        $this->assertFalse($card->shouldShowPercentages());
+    }
+
+    public function test_percentage_sets_flag_to_true(): void
+    {
+        $card = new ChartCard('Test', fn () => ['A' => 1]);
+
+        $this->assertSame($card, $card->percentage());
+        $this->assertTrue($card->shouldShowPercentages());
+    }
+
+    public function test_bar_with_percentages_renders_percentage_row(): void
+    {
+        $card = (new ChartCard('Orders', fn () => [
+            'Jan' => 50,
+            'Feb' => 50,
+        ]))->bar()->percentage();
+
+        $user = User::create([
+            'name' => 'John',
+            'email' => 'john@example.com',
+            'is_active' => true,
+        ]);
+
+        $resource = new class extends Resource
+        {
+            protected static string $model = User::class;
+
+            protected static string $label = 'Users';
+
+            protected static string $singularLabel = 'User';
+
+            public static function fields(): array
+            {
+                return [];
+            }
+
+            public static function tableColumns(): array
+            {
+                return ['id'];
+            }
+        };
+
+        $output = $card->render($user, $resource);
+
+        $this->assertStringContainsString('Orders', $output);
+        $this->assertStringContainsString('50.0%', $output);
+    }
+
+    public function test_horizontal_bar_with_percentages_replaces_value_with_percent(): void
+    {
+        $card = (new ChartCard('Orders', fn () => [
+            'Jan' => 50,
+            'Feb' => 50,
+        ]))->horizontalBar()->percentage();
+
+        $user = User::create([
+            'name' => 'John',
+            'email' => 'john@example.com',
+            'is_active' => true,
+        ]);
+
+        $resource = new class extends Resource
+        {
+            protected static string $model = User::class;
+
+            protected static string $label = 'Users';
+
+            protected static string $singularLabel = 'User';
+
+            public static function fields(): array
+            {
+                return [];
+            }
+
+            public static function tableColumns(): array
+            {
+                return ['id'];
+            }
+        };
+
+        $output = $card->render($user, $resource);
+
+        $this->assertStringContainsString('50.0%', $output);
+    }
+
+    public function test_pie_with_percentages_does_not_change_pie_output(): void
+    {
+        $cardWithout = (new ChartCard('Orders', fn () => [
+            'Jan' => 75,
+            'Feb' => 25,
+        ]))->pie();
+
+        $cardWith = (new ChartCard('Orders', fn () => [
+            'Jan' => 75,
+            'Feb' => 25,
+        ]))->pie()->percentage();
+
+        $user = User::create([
+            'name' => 'John',
+            'email' => 'john@example.com',
+            'is_active' => true,
+        ]);
+
+        $resource = new class extends Resource
+        {
+            protected static string $model = User::class;
+
+            protected static string $label = 'Users';
+
+            protected static string $singularLabel = 'User';
+
+            public static function fields(): array
+            {
+                return [];
+            }
+
+            public static function tableColumns(): array
+            {
+                return ['id'];
+            }
+        };
+
+        $this->assertSame(
+            $cardWithout->render($user, $resource),
+            $cardWith->render($user, $resource),
+        );
+    }
 }

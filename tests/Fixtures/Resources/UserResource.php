@@ -4,6 +4,7 @@ namespace Repat\CliCrud\Tests\Fixtures\Resources;
 
 use Repat\CliCrud\Fields\Boolean;
 use Repat\CliCrud\Fields\Relations\HasMany;
+use Repat\CliCrud\Fields\Relations\HasOne;
 use Repat\CliCrud\Fields\Text;
 use Repat\CliCrud\Resources\Resource;
 use Repat\CliCrud\Tests\Fixtures\User;
@@ -24,6 +25,7 @@ class UserResource extends Resource
             Text::make('Name', 'name')->required(),
             Text::make('Email', 'email')->required()->email(),
             Boolean::make('Is Active', 'is_active')->default(true),
+            HasOne::make('Profile', 'profile', ProfileResource::class),
             HasMany::make('Posts', 'posts', PostResource::class),
         ];
     }

@@ -8,6 +8,7 @@ use League\CommonMark\CommonMarkConverter;
 use Repat\CliCrud\Fields\Field;
 use Repat\CliCrud\Fields\Json;
 use Repat\CliCrud\Fields\Relations\BelongsTo;
+use Repat\CliCrud\Fields\Relations\HasOne;
 use Repat\CliCrud\Fields\Relations\MorphTo;
 use Repat\CliCrud\Fields\Relations\Relation;
 use Repat\CliCrud\Fields\Textarea;
@@ -66,7 +67,7 @@ class DetailViewRenderer
 
         $relations = array_filter(
             $resource::getRelations(),
-            fn ($r) => ! ($r instanceof BelongsTo) && ! ($r instanceof MorphTo)
+            fn ($r) => ! ($r instanceof BelongsTo) && ! ($r instanceof MorphTo) && ! ($r instanceof HasOne)
         );
         foreach ($relations as $relation) {
             $this->renderRelation($model, $relation);
@@ -92,7 +93,7 @@ class DetailViewRenderer
     {
         $fields = [];
         foreach ($resource::fields() as $field) {
-            if ($field instanceof BelongsTo || $field instanceof MorphTo) {
+            if ($field instanceof BelongsTo || $field instanceof MorphTo || $field instanceof HasOne) {
                 $fields[] = $this->buildInlineRelationField($model, $field);
             } elseif ($field instanceof Field) {
                 $value = $model->{$field->getName()};
@@ -108,12 +109,12 @@ class DetailViewRenderer
     }
 
     /**
-     * Build a single-row entry for a BelongsTo or MorphTo relation so it renders
-     * inline in the main detail box, using the related model's $title column.
-     * If the title column is not the model's primary key, the key value is
-     * appended in parens (e.g. "John Doe (1)").
+     * Build a single-row entry for a single-row relation (BelongsTo, HasOne,
+     * MorphTo) so it renders inline in the main detail box, using the related
+     * model's $title column. If the title column is not the model's primary key,
+     * the key value is appended in parens (e.g. "John Doe (1)").
      *
-     * @param  BelongsTo|MorphTo  $relation
+     * @param  BelongsTo|HasOne|MorphTo  $relation
      * @return array{label: string, value: mixed, formatted: string}
      */
     protected function buildInlineRelationField(Model $model, Relation $relation): array
@@ -150,13 +151,14 @@ class DetailViewRenderer
 
     /**
      * For a MorphTo, return the resource whose model matches the resolved
-     * related instance. For a BelongsTo, simply return its single resource.
+     * related instance. For a BelongsTo or HasOne, simply return its single
+     * resource.
      *
-     * @param  BelongsTo|MorphTo  $relation
+     * @param  BelongsTo|HasOne|MorphTo  $relation
      */
     protected function resolveRelatedResource(Relation $relation, Model $related): Resource
     {
-        if ($relation instanceof BelongsTo) {
+        if ($relation instanceof BelongsTo || $relation instanceof HasOne) {
             return $relation->getResource();
         }
 

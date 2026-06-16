@@ -10,7 +10,7 @@ class Chart
 
     protected const BULLET = '●';
 
-    public static function bar(array $data, ?string $title = null, int $width = 40): string
+    public static function bar(array $data, ?string $title = null, int $width = 40, bool $showPercentages = false): string
     {
         if (empty($data)) {
             return '';
@@ -72,11 +72,12 @@ class Chart
 
         $output .= "\n";
 
-        // Values row
+        // Values row (or percentages row when percentage() is enabled)
         for ($col = 0; $col < $count; $col++) {
-            $value = $values[$col];
-            $formatted = $value instanceof \UnitEnum ? $value->name : (string) $value;
-            $padded = str_pad($formatted, $labelWidth + $barFillWidth - mb_strlen($formatted), ' ', STR_PAD_BOTH);
+            $cell = $showPercentages
+                ? self::formatPercentage($values[$col], $values)
+                : self::formatScalar($values[$col]);
+            $padded = str_pad($cell, $labelWidth + $barFillWidth - mb_strlen($cell), ' ', STR_PAD_BOTH);
             $output .= ' '.$padded;
         }
 
@@ -119,7 +120,7 @@ class Chart
         return $output;
     }
 
-    public static function horizontalBar(array $data, ?string $title = null, int $width = 60): string
+    public static function horizontalBar(array $data, ?string $title = null, int $width = 60, bool $showPercentages = false): string
     {
         if (empty($data)) {
             return '';
@@ -135,9 +136,15 @@ class Chart
         $maxValue = max($data);
         $maxValueLength = mb_strlen((string) $maxValue);
 
-        $barWidth = $width - $maxLabelLength - $maxValueLength - 6;
+        // When showing percentages, the right-side column holds the percentage
+        // string; we still right-align based on maxValueLength to preserve layout
+        // when the flag is off (so toggling doesn't visually shift unrelated rows).
+        $columnWidth = $maxValueLength;
+        $barWidth = $width - $maxLabelLength - $columnWidth - 6;
 
         $output .= '├'.str_repeat('─', $barWidth + 2).'┤'."\n";
+
+        $values = array_values($data);
 
         foreach ($data as $label => $value) {
             $barLength = $maxValue > 0 ? (int) round(($value / $maxValue) * $barWidth) : 0;
@@ -147,11 +154,47 @@ class Chart
             $color = Theme::chartColors()[$colorIndex % count(Theme::chartColors())];
 
             $paddedLabel = str_pad($label, $maxLabelLength);
-            $paddedValue = str_pad($value instanceof \UnitEnum ? $value->name : (string) $value, $maxValueLength, ' ', STR_PAD_LEFT);
 
-            $output .= "{$paddedLabel} │{$color}{$bar}".Theme::resetAll().str_repeat(' ', $barWidth - $barLength)."│ {$paddedValue}\n";
+            $rightCell = $showPercentages
+                ? self::formatPercentage($value, $values)
+                : self::formatScalar($value);
+            $paddedRight = str_pad($rightCell, $columnWidth, ' ', STR_PAD_LEFT);
+
+            $output .= "{$paddedLabel} │{$color}{$bar}".Theme::resetAll().str_repeat(' ', $barWidth - $barLength)."│ {$paddedRight}\n";
         }
 
         return $output;
+    }
+
+    /**
+     * Format a single value as a percentage of the total of all values.
+     * Used by the bar() and horizontalBar() bottom/right cells when
+     * ChartCard::percentage() is enabled.
+     */
+    protected static function formatPercentage(mixed $value, array $allValues): string
+    {
+        $total = array_sum(array_map(
+            fn ($v) => $v instanceof \UnitEnum ? 0 : (is_numeric($v) ? $v : 0),
+            $allValues
+        ));
+
+        $numeric = is_numeric($value) ? $value : 0;
+
+        $percentage = $total > 0 ? ($numeric / $total) * 100 : 0;
+
+        return sprintf('%5.1f%%', $percentage);
+    }
+
+    /**
+     * Format a single value as its scalar (string) representation, used by the
+     * default value cells in bar() and horizontalBar().
+     */
+    protected static function formatScalar(mixed $value): string
+    {
+        if ($value instanceof \UnitEnum) {
+            return $value->name;
+        }
+
+        return (string) $value;
     }
 }

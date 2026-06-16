@@ -6,7 +6,7 @@ use DateTime;
 use Repat\CliCrud\Cards\Card;
 use Repat\CliCrud\Fields\Field;
 use Repat\CliCrud\Fields\Json;
-use Repat\CliCrud\Fields\Relations\BelongsTo;
+use Repat\CliCrud\Fields\Relations\HasOne;
 use Repat\CliCrud\Fields\Text;
 use Repat\CliCrud\Fields\Textarea;
 use Repat\CliCrud\Resources\Resource;
@@ -14,8 +14,10 @@ use Repat\CliCrud\Support\Theme;
 use Repat\CliCrud\Tests\Fixtures\Comment;
 use Repat\CliCrud\Tests\Fixtures\FormType;
 use Repat\CliCrud\Tests\Fixtures\Post;
+use Repat\CliCrud\Tests\Fixtures\Profile;
 use Repat\CliCrud\Tests\Fixtures\Resources\CommentResource;
 use Repat\CliCrud\Tests\Fixtures\Resources\PostResource;
+use Repat\CliCrud\Tests\Fixtures\Resources\ProfileResource;
 use Repat\CliCrud\Tests\Fixtures\Resources\UserResource;
 use Repat\CliCrud\Tests\Fixtures\User;
 use Repat\CliCrud\Tests\TestCase;
@@ -1156,59 +1158,57 @@ class DetailViewRendererTest extends TestCase
             'is_active' => true,
         ]);
 
-        // Build a custom resource with: Text -> BelongsTo -> Textarea
-        $resource = new class($user) extends Resource
+        Profile::create([
+            'user_id' => $user->id,
+            'bio' => 'Profile bio text',
+        ]);
+
+        // Build a custom resource with: Text -> HasOne -> Textarea
+        // (exercises the inline-rendering path for both Field and HasOne)
+        $resource = new class extends Resource
         {
-            protected static string $model = Post::class;
+            protected static string $model = User::class;
 
-            protected static string $label = 'Posts';
+            protected static string $label = 'Users';
 
-            protected static string $singularLabel = 'Post';
+            protected static string $singularLabel = 'User';
 
-            protected static ?string $title = 'title';
-
-            public function __construct(private User $user) {}
+            protected static ?string $title = 'name';
 
             public static function fields(): array
             {
                 return [
-                    Text::make('Title', 'title'),
-                    BelongsTo::make('Author', 'user', UserResource::class)->displayField('name'),
-                    Textarea::make('Content', 'content'),
+                    Text::make('Name', 'name'),
+                    HasOne::make('Profile', 'profile', ProfileResource::class),
+                    Textarea::make('Email', 'email'),
                 ];
             }
 
             public static function tableColumns(): array
             {
-                return ['id', 'title'];
+                return ['id', 'name'];
             }
         };
 
-        $post = Post::create([
-            'user_id' => $user->id,
-            'title' => 'Ordered Post',
-            'content' => 'My content here',
-        ]);
-
         ob_start();
-        $this->renderer->render($post, $resource);
+        $this->renderer->render($user, $resource);
         $output = ob_get_clean();
 
         // Verify all three labels appear
-        $this->assertStringContainsString('Title', $output);
-        $this->assertStringContainsString('Author', $output);
-        $this->assertStringContainsString('Content', $output);
+        $this->assertStringContainsString('Name', $output);
+        $this->assertStringContainsString('Profile', $output);
+        $this->assertStringContainsString('Email', $output);
 
         // Verify they appear in declaration order
-        $titlePos = strpos($output, 'Title');
-        $authorPos = strpos($output, 'Author');
-        $contentPos = strpos($output, 'Content');
+        $namePos = strpos($output, 'Name');
+        $profilePos = strpos($output, 'Profile');
+        $emailPos = strpos($output, 'Email');
 
-        $this->assertNotFalse($titlePos);
-        $this->assertNotFalse($authorPos);
-        $this->assertNotFalse($contentPos);
-        $this->assertLessThan($authorPos, $titlePos, 'Title should appear before Author');
-        $this->assertLessThan($contentPos, $authorPos, 'Author should appear before Content');
+        $this->assertNotFalse($namePos);
+        $this->assertNotFalse($profilePos);
+        $this->assertNotFalse($emailPos);
+        $this->assertLessThan($profilePos, $namePos, 'Name should appear before Profile');
+        $this->assertLessThan($emailPos, $profilePos, 'Profile should appear before Email');
     }
 
     public function test_inline_relation_value_is_colored(): void
@@ -1234,5 +1234,65 @@ class DetailViewRendererTest extends TestCase
         $expectedColoredValue = Theme::relationValue().'Colored Target ('.$user->id.')'.Theme::resetFg();
 
         $this->assertStringContainsString($expectedColoredValue, $output);
+    }
+
+    public function test_has_one_renders_inline_in_main_box(): void
+    {
+        $user = User::create([
+            'name' => 'Has One User',
+            'email' => 'hasone@example.com',
+            'is_active' => true,
+        ]);
+
+        Profile::create([
+            'user_id' => $user->id,
+            'bio' => 'Hello world bio',
+        ]);
+
+        ob_start();
+        $this->renderer->render($user, new UserResource);
+        $output = ob_get_clean();
+
+        // Bio appears inline (in the main box, not as a separate table box)
+        $this->assertStringContainsString('Hello world bio', $output);
+
+        // Marker appears before the label
+        $this->assertStringContainsString('→ Profile', $output);
+    }
+
+    public function test_has_one_appends_id_in_parens_when_title_is_not_id(): void
+    {
+        $user = User::create([
+            'name' => 'Has One User 2',
+            'email' => 'hasone2@example.com',
+            'is_active' => true,
+        ]);
+
+        $profile = Profile::create([
+            'user_id' => $user->id,
+            'bio' => 'A bio text',
+        ]);
+
+        ob_start();
+        $this->renderer->render($user, new UserResource);
+        $output = ob_get_clean();
+
+        $this->assertStringContainsString('A bio text ('.$profile->id.')', $output);
+    }
+
+    public function test_has_one_renders_null_when_relation_is_unset(): void
+    {
+        $user = User::create([
+            'name' => 'No Profile User',
+            'email' => 'noprofile@example.com',
+            'is_active' => true,
+        ]);
+
+        ob_start();
+        $this->renderer->render($user, new UserResource);
+        $output = ob_get_clean();
+
+        // The Profile relation is unset — should render as NULL somewhere
+        $this->assertStringContainsString('NULL', $output);
     }
 }

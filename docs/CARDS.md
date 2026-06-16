@@ -41,6 +41,16 @@ public static function cards(): array
 
 Chart types: `bar()` (default), `pie()`, `horizontalBar()`.
 
+To show percentages of the total instead of (or in addition to) raw values, chain `->percentage()`:
+
+```php
+Card::chart('Orders per Month', fn ($model, $resource) => [
+    'Jan' => 42, 'Feb' => 38, 'Mar' => 55, 'Apr' => 61, 'May' => 48,
+])->bar()->percentage(),
+```
+
+For `bar()` and `horizontalBar()`, the percentage replaces the raw value cell. For `pie()`, percentages are always shown — `->percentage()` is a no-op there.
+
 ### Custom Card
 
 Renders arbitrary multi-line content. The closure should return a string.

@@ -221,4 +221,44 @@ class ChartTest extends TestCase
 
         $this->assertNotEmpty($result);
     }
+
+    public function test_bar_chart_with_show_percentages_appends_percent_row(): void
+    {
+        $data = ['Jan' => 50, 'Feb' => 50];
+
+        $result = Chart::bar($data, null, 40, true);
+
+        $this->assertStringContainsString('50.0%', $result);
+    }
+
+    public function test_bar_chart_without_show_percentages_omits_percent_row(): void
+    {
+        $data = ['Jan' => 50, 'Feb' => 50];
+
+        $result = Chart::bar($data, null, 40, false);
+        $resultExplicit = Chart::bar($data, null, 40);
+
+        // The default-arg call should produce the same output as the explicit-false call.
+        $this->assertSame($resultExplicit, $result);
+        $this->assertStringNotContainsString('%', $result);
+    }
+
+    public function test_horizontal_bar_chart_with_show_percentages_replaces_value_with_percent(): void
+    {
+        $data = ['Jan' => 50, 'Feb' => 50];
+
+        $result = Chart::horizontalBar($data, null, 60, true);
+
+        $this->assertStringContainsString('50.0%', $result);
+    }
+
+    public function test_horizontal_bar_chart_without_show_percentages_unchanged(): void
+    {
+        $data = ['Jan' => 50, 'Feb' => 50];
+
+        $result = Chart::horizontalBar($data, null, 60, false);
+        $resultExplicit = Chart::horizontalBar($data, null, 60);
+
+        $this->assertSame($resultExplicit, $result);
+    }
 }
