@@ -132,7 +132,7 @@ class CrudCommandTest extends TestCase
     public function test_render_list_header_with_search(): void
     {
         $this->assertEquals(
-            'Users (search: "joe")',
+            'Users — search: "joe"',
             $this->invokeRenderListHeader('Users', 'joe')
         );
     }
