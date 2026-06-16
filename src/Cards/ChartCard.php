@@ -27,13 +27,6 @@ class ChartCard extends Card
         return $this;
     }
 
-    public function pie(): static
-    {
-        $this->chartType = 'pie';
-
-        return $this;
-    }
-
     public function horizontalBar(): static
     {
         $this->chartType = 'horizontalBar';
@@ -41,9 +34,16 @@ class ChartCard extends Card
         return $this;
     }
 
+    public function scatter(): static
+    {
+        $this->chartType = 'scatter';
+
+        return $this;
+    }
+
     /**
      * Show percentages in addition to (replacing) raw values for bar and
-     * horizontalBar charts. No-op for pie (already percentage-styled).
+     * horizontalBar charts.
      */
     public function percentage(): static
     {
@@ -67,8 +67,8 @@ class ChartCard extends Card
         $data = ($this->dataResolver)($model, $resource);
 
         $chart = match ($this->chartType) {
-            'pie' => Chart::pie($data),
             'horizontalBar' => Chart::horizontalBar($data, null, 60, $this->showPercentages),
+            'scatter' => Chart::scatter($data, null, 60),
             default => Chart::bar($data, null, 40, $this->showPercentages),
         };
 

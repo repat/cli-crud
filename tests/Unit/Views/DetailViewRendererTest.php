@@ -810,7 +810,7 @@ class DetailViewRendererTest extends TestCase
             public static function cards(): array
             {
                 return [
-                    Card::metric('Total Users', fn () => 42),
+                    Card::custom('Total Users', fn () => 42),
                 ];
             }
         };
@@ -861,7 +861,7 @@ class DetailViewRendererTest extends TestCase
             public static function cards(): array
             {
                 return [
-                    Card::metric('Total Users', fn () => 42)->before(),
+                    Card::custom('Total Users', fn () => 42)->before(),
                 ];
             }
         };

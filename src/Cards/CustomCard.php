@@ -19,6 +19,10 @@ class CustomCard extends Card
     {
         $content = ($this->contentResolver)($model, $resource);
 
+        if ($content instanceof \UnitEnum) {
+            $content = $content->name;
+        }
+
         return $this->renderBox(rtrim((string) $content, "\n"));
     }
 }

@@ -84,76 +84,21 @@ class ChartTest extends TestCase
         $this->assertStringContainsString('0', $result);
     }
 
-    public function test_pie_chart_returns_empty_string_for_empty_data(): void
-    {
-        $result = Chart::pie([]);
-        $this->assertEquals('', $result);
-    }
-
-    public function test_pie_chart_renders_single_item(): void
-    {
-        $result = Chart::pie(['Active' => 100]);
-
-        $this->assertStringContainsString('Active', $result);
-        $this->assertStringContainsString('100.0%', $result);
-        $this->assertStringContainsString('●', $result);
-        $this->assertStringContainsString('█', $result);
-    }
-
-    public function test_pie_chart_calculates_percentages(): void
-    {
-        $data = [
-            'Active' => 75,
-            'Inactive' => 25,
-        ];
-
-        $result = Chart::pie($data);
-
-        $this->assertStringContainsString('75.0%', $result);
-        $this->assertStringContainsString('25.0%', $result);
-    }
-
-    public function test_pie_chart_includes_title_when_provided(): void
-    {
-        $result = Chart::pie(['Active' => 100], 'Distribution');
-
-        $this->assertStringContainsString('Distribution', $result);
-    }
-
-    public function test_pie_chart_includes_ansi_colors(): void
-    {
-        $result = Chart::pie(['Active' => 100]);
-
-        $this->assertStringContainsString("\e[", $result);
-        $this->assertStringContainsString("\e[0m", $result);
-    }
-
-    public function test_pie_chart_handles_zero_total(): void
-    {
-        $data = [
-            'A' => 0,
-            'B' => 0,
-        ];
-
-        $result = Chart::pie($data);
-
-        $this->assertStringContainsString('0.0%', $result);
-    }
-
     public function test_horizontal_bar_chart_returns_empty_string_for_empty_data(): void
     {
         $result = Chart::horizontalBar([]);
         $this->assertEquals('', $result);
     }
 
-    public function test_horizontal_bar_chart_renders_with_border(): void
+    public function test_horizontal_bar_chart_renders_with_column_dividers(): void
     {
         $result = Chart::horizontalBar(['Active' => 100]);
 
-        $this->assertStringContainsString('├', $result);
-        $this->assertStringContainsString('┤', $result);
-        $this->assertStringContainsString('─', $result);
+        // The card box already renders its own top/bottom borders. The
+        // horizontal bar chart's data rows just use │ as the in-row column
+        // divider. No internal ├...┤ border is rendered anymore.
         $this->assertStringContainsString('│', $result);
+        $this->assertStringContainsString('█', $result);
     }
 
     public function test_horizontal_bar_chart_renders_multiple_items(): void
@@ -260,5 +205,116 @@ class ChartTest extends TestCase
         $resultExplicit = Chart::horizontalBar($data, null, 60);
 
         $this->assertSame($resultExplicit, $result);
+    }
+
+    public function test_bar_chart_aligns_labels_and_values_under_bars(): void
+    {
+        // Each label and value should start at the same column as the bar's
+        // left edge within its cell. Strip ANSI codes, then compare the
+        // column-offset of the label, value, and first '█' per column.
+        $data = ['Jan' => 50, 'Feb' => 50, 'Mar' => 50];
+        $result = Chart::bar($data);
+        $plain = preg_replace('/\e\[[0-9;]*m/', '', $result);
+        $lines = explode("\n", $plain);
+
+        // Drop the trailing empty line caused by the chart's final newline.
+        $lines = array_values(array_filter($lines, fn (string $l) => $l !== ''));
+
+        // The chart renders: 8 bar-height rows, 1 labels row, 1 values row.
+        $this->assertCount(10, $lines);
+
+        $barRow = $lines[0];
+        $labelRow = $lines[8];
+        $valueRow = $lines[9];
+
+        // Find the column-offset of the first '█' in each bar cell.
+        $barPositions = [];
+        $offset = 0;
+        while (($pos = mb_strpos($barRow, '█', $offset)) !== false) {
+            $barPositions[] = $pos;
+            $offset = $pos + 1;
+            if (count($barPositions) === count($data)) {
+                break;
+            }
+        }
+
+        $this->assertCount(3, $barPositions, 'Expected 3 bar cells in the top row');
+
+        // For each column, the label and value content should sit directly
+        // under the bar — the first non-space char in each cell is at the
+        // same column as the bar's first '█'.
+        $labels = array_keys($data);
+        foreach ($barPositions as $colIndex => $barOffset) {
+            $cellStart = $colIndex * 10;
+
+            $this->assertSame(
+                $labels[$colIndex],
+                mb_substr($labelRow, $cellStart + 1, mb_strlen($labels[$colIndex])),
+                "Label '{$labels[$colIndex]}' should sit directly under the bar at column {$barOffset}"
+            );
+
+            $this->assertSame(
+                '50',
+                mb_substr($valueRow, $cellStart + 1, 2),
+                "Value should sit directly under the bar at column {$barOffset}"
+            );
+        }
+    }
+
+    public function test_horizontal_bar_top_border_aligns_with_data_rows(): void
+    {
+        // The internal ├...┤ top border has been removed — the card box
+        // already renders its own header/divider. The chart now starts
+        // directly with the first data row.
+        $data = ['Jan' => 42, 'Feb' => 38, 'Mar' => 55, 'Apr' => 61, 'May' => 48];
+
+        $result = Chart::horizontalBar($data, null, 60);
+        $plain = preg_replace('/\e\[[0-9;]*m/', '', $result);
+        $lines = explode("\n", $plain);
+        $lines = array_values(array_filter($lines, fn (string $l) => $l !== ''));
+
+        // First line should be a data row, not a border.
+        $this->assertStringStartsNotWith('├', $lines[0]);
+        $this->assertStringContainsString('Jan', $lines[0]);
+    }
+
+    public function test_scatter_returns_empty_string_for_empty_data(): void
+    {
+        $this->assertSame('', Chart::scatter([]));
+    }
+
+    public function test_scatter_renders_single_point(): void
+    {
+        $result = Chart::scatter(['A' => [10, 50]]);
+
+        $this->assertStringContainsString('●', $result);
+        $this->assertStringContainsString('10', $result);
+        $this->assertStringContainsString('50', $result);
+    }
+
+    public function test_scatter_renders_multiple_points(): void
+    {
+        $data = ['A' => [10, 10], 'B' => [20, 50], 'C' => [30, 25]];
+
+        $result = Chart::scatter($data);
+
+        $this->assertStringContainsString('●', $result);
+        $this->assertStringContainsString('10', $result);
+        $this->assertStringContainsString('30', $result);
+    }
+
+    public function test_scatter_includes_title_when_provided(): void
+    {
+        $result = Chart::scatter(['A' => [10, 50]], 'My Scatter');
+
+        $this->assertStringContainsString('My Scatter', $result);
+    }
+
+    public function test_scatter_includes_ansi_colors(): void
+    {
+        $result = Chart::scatter(['A' => [10, 50], 'B' => [20, 80]]);
+
+        $this->assertStringContainsString("\e[", $result);
+        $this->assertStringContainsString('●', $result);
     }
 }

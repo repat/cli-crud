@@ -14,11 +14,6 @@ abstract class Card
         protected string $title
     ) {}
 
-    public static function metric(string $title, Closure $valueResolver): MetricCard
-    {
-        return new MetricCard($title, $valueResolver);
-    }
-
     public static function chart(string $title, Closure $dataResolver): ChartCard
     {
         return new ChartCard($title, $dataResolver);

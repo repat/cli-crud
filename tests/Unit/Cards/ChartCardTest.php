@@ -16,13 +16,6 @@ class ChartCardTest extends TestCase
         $this->assertEquals('bar', $card->getChartType());
     }
 
-    public function test_pie_sets_chart_type(): void
-    {
-        $card = (new ChartCard('Test', fn () => ['A' => 1]))->pie();
-
-        $this->assertEquals('pie', $card->getChartType());
-    }
-
     public function test_horizontal_bar_sets_chart_type(): void
     {
         $card = (new ChartCard('Test', fn () => ['A' => 1]))->horizontalBar();
@@ -32,7 +25,7 @@ class ChartCardTest extends TestCase
 
     public function test_bar_sets_chart_type(): void
     {
-        $card = (new ChartCard('Test', fn () => ['A' => 1]))->pie()->bar();
+        $card = (new ChartCard('Test', fn () => ['A' => 1]))->bar();
 
         $this->assertEquals('bar', $card->getChartType());
     }
@@ -75,46 +68,6 @@ class ChartCardTest extends TestCase
         $this->assertStringContainsString('Active', $output);
         $this->assertStringContainsString('Inactive', $output);
         $this->assertStringContainsString('█', $output);
-    }
-
-    public function test_renders_pie_chart(): void
-    {
-        $card = (new ChartCard('Test Chart', fn () => [
-            'Active' => 75,
-            'Inactive' => 25,
-        ]))->pie();
-
-        $user = User::create([
-            'name' => 'John',
-            'email' => 'john@example.com',
-            'is_active' => true,
-        ]);
-
-        $resource = new class extends Resource
-        {
-            protected static string $model = User::class;
-
-            protected static string $label = 'Users';
-
-            protected static string $singularLabel = 'User';
-
-            public static function fields(): array
-            {
-                return [];
-            }
-
-            public static function tableColumns(): array
-            {
-                return ['id'];
-            }
-        };
-
-        $output = $card->render($user, $resource);
-
-        $this->assertStringContainsString('Test Chart', $output);
-        $this->assertStringContainsString('75.0%', $output);
-        $this->assertStringContainsString('25.0%', $output);
-        $this->assertStringContainsString('●', $output);
     }
 
     public function test_renders_horizontal_bar_chart(): void
@@ -325,49 +278,6 @@ class ChartCardTest extends TestCase
         $this->assertStringContainsString('50.0%', $output);
     }
 
-    public function test_pie_with_percentages_does_not_change_pie_output(): void
-    {
-        $cardWithout = (new ChartCard('Orders', fn () => [
-            'Jan' => 75,
-            'Feb' => 25,
-        ]))->pie();
-
-        $cardWith = (new ChartCard('Orders', fn () => [
-            'Jan' => 75,
-            'Feb' => 25,
-        ]))->pie()->percentage();
-
-        $user = User::create([
-            'name' => 'John',
-            'email' => 'john@example.com',
-            'is_active' => true,
-        ]);
-
-        $resource = new class extends Resource
-        {
-            protected static string $model = User::class;
-
-            protected static string $label = 'Users';
-
-            protected static string $singularLabel = 'User';
-
-            public static function fields(): array
-            {
-                return [];
-            }
-
-            public static function tableColumns(): array
-            {
-                return ['id'];
-            }
-        };
-
-        $this->assertSame(
-            $cardWithout->render($user, $resource),
-            $cardWith->render($user, $resource),
-        );
-    }
-
     public function test_rendered_box_width_matches_visible_chart_width(): void
     {
         // Regression test: Card::renderBox() must ignore ANSI escape codes
@@ -470,5 +380,50 @@ class ChartCardTest extends TestCase
             $this->assertSame(' │', mb_substr($plain, -2), 'Each middle line should end with the right border');
             $this->assertSame($boxWidth, mb_strlen($plain), 'Every middle line should have the same visible width as the box');
         }
+    }
+
+    public function test_scatter_sets_chart_type(): void
+    {
+        $card = (new ChartCard('Test', fn () => ['A' => [1, 2]]))->scatter();
+
+        $this->assertSame('scatter', $card->getChartType());
+    }
+
+    public function test_renders_scatter_chart(): void
+    {
+        $card = (new ChartCard('Test Scatter', fn () => [
+            'A' => [10, 50],
+            'B' => [20, 80],
+        ]))->scatter();
+
+        $user = User::create([
+            'name' => 'John',
+            'email' => 'john@example.com',
+            'is_active' => true,
+        ]);
+
+        $resource = new class extends Resource
+        {
+            protected static string $model = User::class;
+
+            protected static string $label = 'Users';
+
+            protected static string $singularLabel = 'User';
+
+            public static function fields(): array
+            {
+                return [];
+            }
+
+            public static function tableColumns(): array
+            {
+                return ['id'];
+            }
+        };
+
+        $output = $card->render($user, $resource);
+
+        $this->assertStringContainsString('Test Scatter', $output);
+        $this->assertStringContainsString('●', $output);
     }
 }
