@@ -194,7 +194,7 @@ class CrudCommand extends Command
         $this->showListView($resourceClass, 1, false, $search);
     }
 
-    protected function showListView(string $resourceClass, int $page, bool $showTrashed = false, ?string $search = null): void
+    protected function showListView(string $resourceClass, int $page, bool $showTrashed = false, ?string $search = null, ?string $sortColumn = null, string $sortDirection = 'asc'): void
     {
         $resource = new $resourceClass;
         $modelClass = $resource::getModel();
@@ -206,6 +206,10 @@ class CrudCommand extends Command
 
         $query = $resource::searchUsing($query, $search ?? '');
 
+        if ($sortColumn !== null) {
+            $query->orderBy($sortColumn, $sortDirection);
+        }
+
         $perPage = config('cli-crud.pagination.per_page', 15);
         $total = $query->count();
         $totalPages = max(1, ceil($total / $perPage));
@@ -213,7 +217,7 @@ class CrudCommand extends Command
 
         $items = $query->skip(($page - 1) * $perPage)->take($perPage)->get();
 
-        $this->info("\n".$this->renderListHeader($resource::getLabel(), $search));
+        $this->info("\n".$this->renderListHeader($resource::getLabel(), $search, $sortColumn, $sortDirection));
 
         if ($items->isEmpty()) {
             $this->showResourceMenu($resourceClass);
@@ -221,7 +225,7 @@ class CrudCommand extends Command
             return;
         }
 
-        $this->showListActions($resourceClass, $items, $page, $totalPages, $showTrashed, $search);
+        $this->showListActions($resourceClass, $items, $page, $totalPages, $showTrashed, $search, $sortColumn, $sortDirection);
     }
 
     protected function promptForSearchTerm(string $label): ?string
@@ -237,16 +241,23 @@ class CrudCommand extends Command
         return $trimmed === '' ? null : $trimmed;
     }
 
-    protected function renderListHeader(string $label, ?string $search): string
+    protected function renderListHeader(string $label, ?string $search, ?string $sortColumn = null, string $sortDirection = 'asc'): string
     {
-        if ($search === null) {
-            return $label;
+        $parts = [$label];
+
+        if ($search !== null) {
+            $parts[] = 'search: "'.$search.'"';
         }
 
-        return $label.' (search: "'.$search.'")';
+        if ($sortColumn !== null) {
+            $arrow = $sortDirection === 'asc' ? '↑' : '↓';
+            $parts[] = 'sorted by '.$arrow.' '.ColumnFormatter::format($sortColumn).' '.strtoupper($sortDirection);
+        }
+
+        return implode(' — ', $parts);
     }
 
-    protected function showListActions(string $resourceClass, Collection $items, int $page, int $totalPages, bool $showTrashed, ?string $search = null): void
+    protected function showListActions(string $resourceClass, Collection $items, int $page, int $totalPages, bool $showTrashed, ?string $search = null, ?string $sortColumn = null, string $sortDirection = 'asc'): void
     {
         $resource = new $resourceClass;
         $columns = $resource::tableColumns();
@@ -292,10 +303,10 @@ class CrudCommand extends Command
         }
 
         $selectedItem = $items[$selectedIndex];
-        $this->showRecordActionMenu($resourceClass, $selectedItem, $page, $totalPages, $showTrashed, $search);
+        $this->showRecordActionMenu($resourceClass, $selectedItem, $page, $totalPages, $showTrashed, $search, $sortColumn, $sortDirection);
     }
 
-    protected function showRecordActionMenu(string $resourceClass, Model $item, int $page, int $totalPages, bool $showTrashed, ?string $search = null): void
+    protected function showRecordActionMenu(string $resourceClass, Model $item, int $page, int $totalPages, bool $showTrashed, ?string $search = null, ?string $sortColumn = null, string $sortDirection = 'asc'): void
     {
         $resource = new $resourceClass;
         $options = [];
@@ -332,6 +343,14 @@ class CrudCommand extends Command
             $options['toggle_trashed'] = $showTrashed ? 'Show active records' : 'Show trashed records';
         }
 
+        if ($sortColumn !== null) {
+            $arrow = $sortDirection === 'asc' ? '↑' : '↓';
+            $options['sort_by'] = "Sort (sorted by {$arrow} ".ColumnFormatter::format($sortColumn).' '.strtoupper($sortDirection).')';
+            $options['clear_sort'] = 'Clear sorting';
+        } else {
+            $options['sort_by'] = 'Sort By...';
+        }
+
         if ($totalPages > 1) {
             $options['page'] = 'Go to page...';
         }
@@ -344,68 +363,85 @@ class CrudCommand extends Command
             options: $options
         );
 
-        $this->handleRecordAction($action, $resourceClass, $item, $page, $totalPages, $showTrashed, $search);
+        $this->handleRecordAction($action, $resourceClass, $item, $page, $totalPages, $showTrashed, $search, $sortColumn, $sortDirection);
     }
 
-    protected function handleRecordAction(string $action, string $resourceClass, Model $item, int $page, int $totalPages, bool $showTrashed, ?string $search = null): void
+    protected function handleRecordAction(string $action, string $resourceClass, Model $item, int $page, int $totalPages, bool $showTrashed, ?string $search = null, ?string $sortColumn = null, string $sortDirection = 'asc'): void
     {
         if ($action === 'view') {
-            $this->showDetailView($resourceClass, $item, $search);
-            $this->showListView($resourceClass, $page, $showTrashed, $search);
+            $this->showDetailView($resourceClass, $item, $search, $sortColumn, $sortDirection);
+            $this->showListView($resourceClass, $page, $showTrashed, $search, $sortColumn, $sortDirection);
 
             return;
         }
 
         if ($action === 'edit') {
-            $this->showEditForm($resourceClass, $item, $search);
-            $this->showListView($resourceClass, $page, $showTrashed, $search);
+            $this->showEditForm($resourceClass, $item, $search, $sortColumn, $sortDirection);
+            $this->showListView($resourceClass, $page, $showTrashed, $search, $sortColumn, $sortDirection);
 
             return;
         }
 
         if ($action === 'run_action') {
-            $this->runActionMenu($resourceClass, $item, $page, $totalPages, $showTrashed, $search);
+            $this->runActionMenu($resourceClass, $item, $page, $totalPages, $showTrashed, $search, $sortColumn, $sortDirection);
 
             return;
         }
 
         if ($action === 'delete') {
             $this->deleteModel($resourceClass, $item);
-            $this->showListView($resourceClass, $page, $showTrashed, $search);
+            $this->showListView($resourceClass, $page, $showTrashed, $search, $sortColumn, $sortDirection);
 
             return;
         }
 
         if ($action === 'restore') {
             $this->restoreModel($resourceClass, $item);
-            $this->showListView($resourceClass, $page, $showTrashed, $search);
+            $this->showListView($resourceClass, $page, $showTrashed, $search, $sortColumn, $sortDirection);
 
             return;
         }
 
         if ($action === 'force_delete') {
             $this->forceDeleteModel($resourceClass, $item);
-            $this->showListView($resourceClass, $page, $showTrashed, $search);
+            $this->showListView($resourceClass, $page, $showTrashed, $search, $sortColumn, $sortDirection);
 
             return;
         }
 
         if ($action === 'create') {
-            $this->showCreateForm($resourceClass, $search);
-            $this->showListView($resourceClass, $page, $showTrashed, $search);
+            $this->showCreateForm($resourceClass, $search, $sortColumn, $sortDirection);
+            $this->showListView($resourceClass, $page, $showTrashed, $search, $sortColumn, $sortDirection);
 
             return;
         }
 
         if ($action === 'toggle_trashed') {
-            $this->showListView($resourceClass, 1, ! $showTrashed, $search);
+            $this->showListView($resourceClass, 1, ! $showTrashed, $search, $sortColumn, $sortDirection);
+
+            return;
+        }
+
+        if ($action === 'sort_by') {
+            $newSort = $this->promptForSortColumn($resourceClass);
+            if ($newSort !== null) {
+                $this->showListView($resourceClass, 1, $showTrashed, $search, $newSort['column'], $newSort['direction']);
+            } else {
+                $this->showListView($resourceClass, $page, $showTrashed, $search, $sortColumn, $sortDirection);
+            }
+
+            return;
+        }
+
+        if ($action === 'clear_sort') {
+            $this->showListView($resourceClass, $page, $showTrashed, $search);
 
             return;
         }
 
         if ($action === 'page') {
             $newPage = $this->askForPageNumber($totalPages);
-            $this->showListView($resourceClass, $newPage, $showTrashed, $search);
+            $this->showListView($resourceClass, $newPage, $showTrashed, $search, $sortColumn, $sortDirection);
 
             return;
         }
@@ -503,24 +539,66 @@ class CrudCommand extends Command
         return max(1, min($page, $totalPages));
     }
 
-    protected function showDetailView(string $resourceClass, Model $model, ?string $search = null): void
+    protected function promptForSortColumn(string $resourceClass): ?array
+    {
+        $resource = new $resourceClass;
+        $columns = $resource::tableColumns();
+        $modelInstance = $resource::getModelInstance();
+        $casts = $modelInstance->getCasts();
+
+        $columns = array_values(array_filter(
+            $columns,
+            fn ($col) => ! isset($casts[$col]) || ! in_array($casts[$col], ['array', 'json'], true)
+        ));
+
+        // Skip pivot columns (dot notation) — can't be used in simple orderBy
+        $columns = array_values(array_filter(
+            $columns,
+            fn ($col) => ! str_contains($col, '.')
+        ));
+
+        if (empty($columns)) {
+            $this->warn('No sortable columns available.');
+
+            return null;
+        }
+
+        $options = [];
+        foreach ($columns as $col) {
+            $options[$col] = ColumnFormatter::format($col);
+        }
+
+        $column = select(
+            label: 'Sort by which column?',
+            options: $options,
+        );
+
+        $direction = select(
+            label: "Sort {$options[$column]} ...",
+            options: ['asc' => 'Ascending', 'desc' => 'Descending'],
+        );
+
+        return ['column' => $column, 'direction' => $direction];
+    }
+
+    protected function showDetailView(string $resourceClass, Model $model, ?string $search = null, ?string $sortColumn = null, string $sortDirection = 'asc'): void
     {
         $resource = new $resourceClass;
 
         $fields = $resource::getFields();
         if (empty($fields)) {
             $this->error("No fields defined for {$resource::getSingularLabel()}.");
-            $this->showDetailActions($resourceClass, $model, $search);
+            $this->showDetailActions($resourceClass, $model, $search, $sortColumn, $sortDirection);
 
             return;
         }
 
         $this->detailViewRenderer->render($model, $resource);
 
-        $this->showDetailActions($resourceClass, $model, $search);
+        $this->showDetailActions($resourceClass, $model, $search, $sortColumn, $sortDirection);
     }
 
-    protected function showDetailActions(string $resourceClass, Model $model, ?string $search = null): void
+    protected function showDetailActions(string $resourceClass, Model $model, ?string $search = null, ?string $sortColumn = null, string $sortDirection = 'asc'): void
     {
         $resource = new $resourceClass;
         $options = [];
@@ -563,13 +641,13 @@ class CrudCommand extends Command
         }
 
         if ($action === 'edit') {
-            $this->showEditForm($resourceClass, $model, $search);
+            $this->showEditForm($resourceClass, $model, $search, $sortColumn, $sortDirection);
 
             return;
         }
 
         if ($action === 'run_action') {
-            $this->runActionMenu($resourceClass, $model, 1, 1, false, $search);
+            $this->runActionMenu($resourceClass, $model, 1, 1, false, $search, $sortColumn, $sortDirection);
 
             return;
         }
@@ -582,10 +660,10 @@ class CrudCommand extends Command
             default => null,
         };
 
-        $this->showListView($resourceClass, 1, false, $search);
+        $this->showListView($resourceClass, 1, false, $search, $sortColumn, $sortDirection);
     }
 
-    protected function showCreateForm(string $resourceClass, ?string $search = null): void
+    protected function showCreateForm(string $resourceClass, ?string $search = null, ?string $sortColumn = null, string $sortDirection = 'asc'): void
     {
         $resource = new $resourceClass;
 
@@ -615,13 +693,13 @@ class CrudCommand extends Command
             $model = $modelClass::create($data);
 
             $this->info("{$resource::getSingularLabel()} created successfully!");
-            $this->showDetailView($resourceClass, $model, $search);
+            $this->showDetailView($resourceClass, $model, $search, $sortColumn, $sortDirection);
         } else {
             $this->showResourceMenu($resourceClass);
         }
     }
 
-    protected function showEditForm(string $resourceClass, Model $model, ?string $search = null): void
+    protected function showEditForm(string $resourceClass, Model $model, ?string $search = null, ?string $sortColumn = null, string $sortDirection = 'asc'): void
     {
         $resource = new $resourceClass;
 
@@ -658,7 +736,7 @@ class CrudCommand extends Command
             $this->info("{$resource::getSingularLabel()} updated successfully!");
         }
 
-        $this->showDetailView($resourceClass, $model, $search);
+        $this->showDetailView($resourceClass, $model, $search, $sortColumn, $sortDirection);
     }
 
     protected function deleteModel(string $resourceClass, Model $model): void
@@ -722,14 +800,14 @@ class CrudCommand extends Command
         return "#{$item->getKey()}";
     }
 
-    protected function runActionMenu(string $resourceClass, Model $item, int $page, int $totalPages, bool $showTrashed, ?string $search): void
+    protected function runActionMenu(string $resourceClass, Model $item, int $page, int $totalPages, bool $showTrashed, ?string $search, ?string $sortColumn = null, string $sortDirection = 'asc'): void
     {
         $resource = new $resourceClass;
         $actions = $resource::getActions();
 
         if (empty($actions)) {
             $this->error('No actions are registered on this resource.');
-            $this->showListView($resourceClass, $page, $showTrashed, $search);
+            $this->showListView($resourceClass, $page, $showTrashed, $search, $sortColumn, $sortDirection);
 
             return;
         }
@@ -747,7 +825,7 @@ class CrudCommand extends Command
         $action = $this->resolveActionByHash($actions, $chosenHash);
 
         if ($action === null) {
-            $this->showListView($resourceClass, $page, $showTrashed, $search);
+            $this->showListView($resourceClass, $page, $showTrashed, $search, $sortColumn, $sortDirection);
 
             return;
         }
@@ -756,7 +834,7 @@ class CrudCommand extends Command
             $label = $this->formatActionConfirmLabel($action, $resource, $item);
 
             if (! confirm(label: $label, default: false)) {
-                $this->showListView($resourceClass, $page, $showTrashed, $search);
+                $this->showListView($resourceClass, $page, $showTrashed, $search, $sortColumn, $sortDirection);
 
                 return;
             }
@@ -767,7 +845,7 @@ class CrudCommand extends Command
 
         $this->renderActionResponse($response, $action, $resource);
 
-        $this->showListView($resourceClass, $page, $showTrashed, $search);
+        $this->showListView($resourceClass, $page, $showTrashed, $search, $sortColumn, $sortDirection);
     }
 
     protected function formatActionLabel(Action $action): string

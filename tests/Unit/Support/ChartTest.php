@@ -317,4 +317,12 @@ class ChartTest extends TestCase
         $this->assertStringContainsString("\e[", $result);
         $this->assertStringContainsString('●', $result);
     }
+
+    public function test_scatter_includes_legend_with_labels(): void
+    {
+        $result = Chart::scatter(['Alpha' => [10, 50], 'Beta' => [20, 80]]);
+
+        $this->assertStringContainsString('Alpha', $result);
+        $this->assertStringContainsString('Beta', $result);
+    }
 }

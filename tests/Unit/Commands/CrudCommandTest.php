@@ -289,13 +289,15 @@ class CrudCommandTest extends TestCase
                 return null;
             }
 
-            protected function showListView(string $resourceClass, int $page, bool $showTrashed = false, ?string $search = null): void
+            protected function showListView(string $resourceClass, int $page, bool $showTrashed = false, ?string $search = null, ?string $sortColumn = null, string $sortDirection = 'asc'): void
             {
                 $this->state['args'] = [
                     'resourceClass' => $resourceClass,
                     'page' => $page,
                     'showTrashed' => $showTrashed,
                     'search' => $search,
+                    'sortColumn' => $sortColumn,
+                    'sortDirection' => $sortDirection,
                 ];
             }
         };
@@ -340,13 +342,15 @@ class CrudCommandTest extends TestCase
                 return 'alice';
             }
 
-            protected function showListView(string $resourceClass, int $page, bool $showTrashed = false, ?string $search = null): void
+            protected function showListView(string $resourceClass, int $page, bool $showTrashed = false, ?string $search = null, ?string $sortColumn = null, string $sortDirection = 'asc'): void
             {
                 $this->state['args'] = [
                     'resourceClass' => $resourceClass,
                     'page' => $page,
                     'showTrashed' => $showTrashed,
                     'search' => $search,
+                    'sortColumn' => $sortColumn,
+                    'sortDirection' => $sortDirection,
                 ];
             }
         };

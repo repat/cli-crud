@@ -199,6 +199,14 @@ class Chart
         $output .= str_repeat(' ', $plotWidth - mb_strlen($minX));
         $output .= $maxX."\n";
 
+        // Legend
+        $output .= "\n";
+        foreach ($labels as $i => $label) {
+            $output .= ' '.$colors[$i % $colorCount].'●'.Theme::resetAll().' '.$label;
+            $output .= str_repeat(' ', 3);
+        }
+        $output .= "\n";
+
         return $output;
     }
 
