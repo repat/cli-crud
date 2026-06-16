@@ -24,6 +24,6 @@ return [
     'themes' => [
         // Built-in presets: 'dark' (default) | 'light'
         // Individual keys override the preset — see Theme::value() for the full list.
-        'preset' => 'light',
+        'preset' => 'dark',
     ],
 ];

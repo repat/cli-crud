@@ -19,6 +19,7 @@ class Theme
         'code' => "\e[38;5;244m",
         'blockquote' => "\e[38;5;242m",
         'hr' => "\e[90m",
+        'relation_value' => "\e[36m",
         'chart' => [
             "\e[32m", "\e[34m", "\e[33m", "\e[35m", "\e[36m",
             "\e[91m", "\e[92m", "\e[93m", "\e[94m", "\e[95m",
@@ -40,6 +41,7 @@ class Theme
         'code' => "\e[38;5;240m",
         'blockquote' => "\e[38;5;242m",
         'hr' => "\e[90m",
+        'relation_value' => "\e[34m",
         'chart' => [
             "\e[32m", "\e[34m", "\e[38;5;130m", "\e[35m", "\e[36m",
             "\e[91m", "\e[92m", "\e[38;5;136m", "\e[94m", "\e[95m",
@@ -119,6 +121,11 @@ class Theme
     public static function hr(): string
     {
         return static::value('hr');
+    }
+
+    public static function relationValue(): string
+    {
+        return static::value('relation_value');
     }
 
     public static function chartColors(): array

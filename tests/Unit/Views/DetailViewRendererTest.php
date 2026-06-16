@@ -4,12 +4,17 @@ namespace Repat\CliCrud\Tests\Unit\Views;
 
 use DateTime;
 use Repat\CliCrud\Cards\Card;
+use Repat\CliCrud\Fields\Field;
 use Repat\CliCrud\Fields\Json;
+use Repat\CliCrud\Fields\Relations\BelongsTo;
 use Repat\CliCrud\Fields\Text;
 use Repat\CliCrud\Fields\Textarea;
 use Repat\CliCrud\Resources\Resource;
+use Repat\CliCrud\Support\Theme;
+use Repat\CliCrud\Tests\Fixtures\Comment;
 use Repat\CliCrud\Tests\Fixtures\FormType;
 use Repat\CliCrud\Tests\Fixtures\Post;
+use Repat\CliCrud\Tests\Fixtures\Resources\CommentResource;
 use Repat\CliCrud\Tests\Fixtures\Resources\PostResource;
 use Repat\CliCrud\Tests\Fixtures\Resources\UserResource;
 use Repat\CliCrud\Tests\Fixtures\User;
@@ -155,7 +160,7 @@ class DetailViewRendererTest extends TestCase
     {
         $renderer = new class extends DetailViewRenderer
         {
-            public function test_format_value(mixed $value, ?\Repat\CliCrud\Fields\Field $field = null): string
+            public function test_format_value(mixed $value, ?Field $field = null): string
             {
                 return $this->formatValue($value, $field);
             }
@@ -165,7 +170,7 @@ class DetailViewRendererTest extends TestCase
         $result = $renderer->test_format_value('**bold text**', $field);
 
         $this->assertStringContainsString("\e[1m", $result);
-        $this->assertStringContainsString("bold text", $result);
+        $this->assertStringContainsString('bold text', $result);
         $this->assertStringContainsString("\e[22m", $result);
     }
 
@@ -173,7 +178,7 @@ class DetailViewRendererTest extends TestCase
     {
         $renderer = new class extends DetailViewRenderer
         {
-            public function test_format_value(mixed $value, ?\Repat\CliCrud\Fields\Field $field = null): string
+            public function test_format_value(mixed $value, ?Field $field = null): string
             {
                 return $this->formatValue($value, $field);
             }
@@ -183,7 +188,7 @@ class DetailViewRendererTest extends TestCase
         $result = $renderer->test_format_value('Use the `run()` method.', $field);
 
         $this->assertStringContainsString("\e[38;5;244m", $result);
-        $this->assertStringContainsString("run()", $result);
+        $this->assertStringContainsString('run()', $result);
         $this->assertStringContainsString("\e[39m", $result);
     }
 
@@ -191,7 +196,7 @@ class DetailViewRendererTest extends TestCase
     {
         $renderer = new class extends DetailViewRenderer
         {
-            public function test_format_value(mixed $value, ?\Repat\CliCrud\Fields\Field $field = null): string
+            public function test_format_value(mixed $value, ?Field $field = null): string
             {
                 return $this->formatValue($value, $field);
             }
@@ -1019,5 +1024,215 @@ class DetailViewRendererTest extends TestCase
         $lengths = array_map(fn ($line) => mb_strlen(preg_replace('/\e\[[0-9;]*m/', '', $line)), $borderLines);
 
         $this->assertCount(1, array_unique($lengths), 'All border lines should have the same length');
+    }
+
+    public function test_belongs_to_renders_inline_in_main_box(): void
+    {
+        $user = User::create([
+            'name' => 'John Doe',
+            'email' => 'john@example.com',
+            'is_active' => true,
+        ]);
+
+        $post = Post::create([
+            'user_id' => $user->id,
+            'title' => 'My Post',
+            'content' => 'Some content',
+        ]);
+
+        ob_start();
+        $this->renderer->render($post, new PostResource);
+        $output = ob_get_clean();
+
+        // User name appears inline
+        $this->assertStringContainsString('John Doe', $output);
+
+        // Marker appears before the label
+        $this->assertStringContainsString('→ User', $output);
+    }
+
+    public function test_belongs_to_appends_id_in_parens_when_title_is_not_id(): void
+    {
+        $user = User::create([
+            'name' => 'Jane Smith',
+            'email' => 'jane@example.com',
+            'is_active' => true,
+        ]);
+
+        $post = Post::create([
+            'user_id' => $user->id,
+            'title' => 'My Post',
+            'content' => 'Content',
+        ]);
+
+        ob_start();
+        $this->renderer->render($post, new PostResource);
+        $output = ob_get_clean();
+
+        $this->assertStringContainsString('Jane Smith ('.$user->id.')', $output);
+
+        // Marker appears before the label
+        $this->assertStringContainsString('→ User', $output);
+    }
+
+    public function test_belongs_to_does_not_double_render_when_title_equals_id(): void
+    {
+        $user = User::create([
+            'name' => 'Bob',
+            'email' => 'bob@example.com',
+            'is_active' => true,
+        ]);
+
+        $resource = new class($user) extends Resource
+        {
+            protected static string $model = User::class;
+
+            protected static string $label = 'Users';
+
+            protected static string $singularLabel = 'User';
+
+            protected static ?string $title = 'id';
+
+            public function __construct(private User $user) {}
+
+            public static function fields(): array
+            {
+                return [
+                    Text::make('Name', 'name'),
+                ];
+            }
+
+            public static function tableColumns(): array
+            {
+                return ['id', 'name'];
+            }
+        };
+
+        ob_start();
+        $this->renderer->render($user, $resource);
+        $output = ob_get_clean();
+
+        // The output should not contain the user's id in parens, since title == id
+        $this->assertStringNotContainsString(' ('.$user->id.')', $output);
+    }
+
+    public function test_morph_to_renders_inline_with_related_models_title(): void
+    {
+        $user = User::create([
+            'name' => 'Morphed Target',
+            'email' => 'morph@example.com',
+            'is_active' => true,
+        ]);
+
+        $post = Post::create([
+            'user_id' => $user->id,
+            'title' => 'Test Post',
+            'content' => 'Content',
+        ]);
+
+        // Create a comment morphing to the post
+        $comment = Comment::create([
+            'commentable_type' => Post::class,
+            'commentable_id' => $post->id,
+            'body' => 'Test comment',
+        ]);
+
+        ob_start();
+        $this->renderer->render($comment, new CommentResource);
+        $output = ob_get_clean();
+
+        // Commentable relation renders inline, showing the post's title
+        $this->assertStringContainsString('Test Post', $output);
+
+        // Marker appears before the label
+        $this->assertStringContainsString('→ Commentable', $output);
+    }
+
+    public function test_fields_and_inline_relations_render_in_declaration_order(): void
+    {
+        $user = User::create([
+            'name' => 'Order Test',
+            'email' => 'order@example.com',
+            'is_active' => true,
+        ]);
+
+        // Build a custom resource with: Text -> BelongsTo -> Textarea
+        $resource = new class($user) extends Resource
+        {
+            protected static string $model = Post::class;
+
+            protected static string $label = 'Posts';
+
+            protected static string $singularLabel = 'Post';
+
+            protected static ?string $title = 'title';
+
+            public function __construct(private User $user) {}
+
+            public static function fields(): array
+            {
+                return [
+                    Text::make('Title', 'title'),
+                    BelongsTo::make('Author', 'user', UserResource::class)->displayField('name'),
+                    Textarea::make('Content', 'content'),
+                ];
+            }
+
+            public static function tableColumns(): array
+            {
+                return ['id', 'title'];
+            }
+        };
+
+        $post = Post::create([
+            'user_id' => $user->id,
+            'title' => 'Ordered Post',
+            'content' => 'My content here',
+        ]);
+
+        ob_start();
+        $this->renderer->render($post, $resource);
+        $output = ob_get_clean();
+
+        // Verify all three labels appear
+        $this->assertStringContainsString('Title', $output);
+        $this->assertStringContainsString('Author', $output);
+        $this->assertStringContainsString('Content', $output);
+
+        // Verify they appear in declaration order
+        $titlePos = strpos($output, 'Title');
+        $authorPos = strpos($output, 'Author');
+        $contentPos = strpos($output, 'Content');
+
+        $this->assertNotFalse($titlePos);
+        $this->assertNotFalse($authorPos);
+        $this->assertNotFalse($contentPos);
+        $this->assertLessThan($authorPos, $titlePos, 'Title should appear before Author');
+        $this->assertLessThan($contentPos, $authorPos, 'Author should appear before Content');
+    }
+
+    public function test_inline_relation_value_is_colored(): void
+    {
+        $user = User::create([
+            'name' => 'Colored Target',
+            'email' => 'colored@example.com',
+            'is_active' => true,
+        ]);
+
+        $post = Post::create([
+            'user_id' => $user->id,
+            'title' => 'My Post',
+            'content' => 'Some content',
+        ]);
+
+        ob_start();
+        $this->renderer->render($post, new PostResource);
+        $output = ob_get_clean();
+
+        // The related model's display value is wrapped in the relation color
+        // ANSI sequence, followed by a reset.
+        $expectedColoredValue = Theme::relationValue().'Colored Target ('.$user->id.')'.Theme::resetFg();
+
+        $this->assertStringContainsString($expectedColoredValue, $output);
     }
 }

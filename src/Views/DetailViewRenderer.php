@@ -7,6 +7,8 @@ use Illuminate\Support\Collection;
 use League\CommonMark\CommonMarkConverter;
 use Repat\CliCrud\Fields\Field;
 use Repat\CliCrud\Fields\Json;
+use Repat\CliCrud\Fields\Relations\BelongsTo;
+use Repat\CliCrud\Fields\Relations\MorphTo;
 use Repat\CliCrud\Fields\Relations\Relation;
 use Repat\CliCrud\Fields\Textarea;
 use Repat\CliCrud\Resources\Resource;
@@ -26,6 +28,8 @@ class DetailViewRenderer
     protected const LABEL_PADDING = 2;
 
     protected const BOX_PADDING = 2;
+
+    protected const RELATION_LABEL_MARKER = '→ ';
 
     protected const BOX = [
         'top_left' => '╭',
@@ -60,7 +64,10 @@ class DetailViewRenderer
 
         $this->renderCards($model, $resource, 'before');
 
-        $relations = $resource::getRelations();
+        $relations = array_filter(
+            $resource::getRelations(),
+            fn ($r) => ! ($r instanceof BelongsTo) && ! ($r instanceof MorphTo)
+        );
         foreach ($relations as $relation) {
             $this->renderRelation($model, $relation);
         }
@@ -84,16 +91,85 @@ class DetailViewRenderer
     protected function buildFieldData(Model $model, Resource $resource): array
     {
         $fields = [];
-        foreach ($resource::getFields() as $field) {
-            $value = $model->{$field->getName()};
-            $fields[] = [
-                'label' => $field->getLabel(),
-                'value' => $value,
-                'formatted' => $this->formatValue($value, $field),
-            ];
+        foreach ($resource::fields() as $field) {
+            if ($field instanceof BelongsTo || $field instanceof MorphTo) {
+                $fields[] = $this->buildInlineRelationField($model, $field);
+            } elseif ($field instanceof Field) {
+                $value = $model->{$field->getName()};
+                $fields[] = [
+                    'label' => $field->getLabel(),
+                    'value' => $value,
+                    'formatted' => $this->formatValue($value, $field),
+                ];
+            }
         }
 
         return $fields;
+    }
+
+    /**
+     * Build a single-row entry for a BelongsTo or MorphTo relation so it renders
+     * inline in the main detail box, using the related model's $title column.
+     * If the title column is not the model's primary key, the key value is
+     * appended in parens (e.g. "John Doe (1)").
+     *
+     * @param  BelongsTo|MorphTo  $relation
+     * @return array{label: string, value: mixed, formatted: string}
+     */
+    protected function buildInlineRelationField(Model $model, Relation $relation): array
+    {
+        $label = self::RELATION_LABEL_MARKER.$relation->getLabel();
+        $related = $model->{$relation->getName()};
+
+        if (! $related instanceof Model) {
+            return [
+                'label' => $label,
+                'value' => null,
+                'formatted' => $this->formatValue(null),
+            ];
+        }
+
+        $relatedResource = $this->resolveRelatedResource($relation, $related);
+        $titleColumn = $relatedResource::getTitle();
+        $titleValue = $related->{$titleColumn};
+        $keyName = $related->getKeyName();
+        $keyValue = $related->getKey();
+
+        $display = ($titleColumn === $keyName)
+            ? (string) $titleValue
+            : $titleValue.' ('.$keyValue.')';
+
+        $formatted = Theme::relationValue().$this->formatValue($display).Theme::resetFg();
+
+        return [
+            'label' => $label,
+            'value' => $display,
+            'formatted' => $formatted,
+        ];
+    }
+
+    /**
+     * For a MorphTo, return the resource whose model matches the resolved
+     * related instance. For a BelongsTo, simply return its single resource.
+     *
+     * @param  BelongsTo|MorphTo  $relation
+     */
+    protected function resolveRelatedResource(Relation $relation, Model $related): Resource
+    {
+        if ($relation instanceof BelongsTo) {
+            return $relation->getResource();
+        }
+
+        foreach ($relation->getResources() as $resource) {
+            $resourceModel = $resource::getModel();
+            if ($related instanceof $resourceModel) {
+                return $resource;
+            }
+        }
+
+        $resources = $relation->getResources();
+
+        return $resources[0] ?? $relation->getResource();
     }
 
     protected function calculateDimensions(array $fields, string $title): void
@@ -190,10 +266,6 @@ class DetailViewRenderer
         }
     }
 
-    // TODO: single-row relations (BelongsTo, MorphTo) currently render as a 1-row table
-    // here, which is technically functional but a UX wart. A future round should detect
-    // the relation type via $relation->getRelationType() and render single-row cases
-    // as a labeled field instead of a table. Pre-existing behavior, not introduced by morphTo/morphMany.
     protected function renderRelation(Model $model, Relation $relation): void
     {
         $relatedItems = $model->{$relation->getName()}()->get();
@@ -394,7 +466,7 @@ class DetailViewRenderer
         $html = preg_replace('/<strong>(.*?)<\/strong>/i', Theme::bold().'$1'.Theme::resetBold(), $html);
         $html = preg_replace('/<em>(.*?)<\/em>/i', Theme::italic().'$1'.Theme::resetItalic(), $html);
         $html = preg_replace('/<hr\s*\/?>/i', "\n".Theme::hr().str_repeat('─', 40).Theme::resetFg()."\n", $html);
-        $html = preg_replace('/<a\s+[^>]*href="([^"]*)"[^>]*>(.*?)<\/a>/i', "$2 (".Theme::linkUrl().'$1'.Theme::resetUnderline().')', $html);
+        $html = preg_replace('/<a\s+[^>]*href="([^"]*)"[^>]*>(.*?)<\/a>/i', '$2 ('.Theme::linkUrl().'$1'.Theme::resetUnderline().')', $html);
 
         $html = preg_replace('/<h[1-6]>(.*?)<\/h[1-6]>/i', Theme::heading().'$1'.Theme::resetAll()."\n\n", $html);
         $html = preg_replace('/<li[^>]*>(.*?)<\/li>/is', "  • $1\n", $html);

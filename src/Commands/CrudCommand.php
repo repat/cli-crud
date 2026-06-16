@@ -4,6 +4,7 @@ namespace Repat\CliCrud\Commands;
 
 use Illuminate\Console\Command;
 use Illuminate\Database\Eloquent\Collection as EloquentCollection;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Collection;
 use Repat\CliCrud\Actions\Action;
@@ -24,6 +25,7 @@ use Repat\CliCrud\Views\DetailViewRenderer;
 
 use function Laravel\Prompts\confirm;
 use function Laravel\Prompts\datatable;
+use function Laravel\Prompts\password;
 use function Laravel\Prompts\select;
 use function Laravel\Prompts\text;
 
@@ -60,6 +62,10 @@ class CrudCommand extends Command
 
     public function handle(): int
     {
+        if ($this->authenticateIfRequired()) {
+            return self::FAILURE;
+        }
+
         $this->line(AsciiArt::render(config('app.name')));
         $this->line('');
 
@@ -74,6 +80,37 @@ class CrudCommand extends Command
         $this->showMainMenu($resources);
 
         return self::SUCCESS;
+    }
+
+    protected function authenticateIfRequired(): bool
+    {
+        if (! config('cli-crud.authorization.enabled', false)) {
+            return false;
+        }
+
+        if (auth()->check()) {
+            return false;
+        }
+
+        $this->info('Authentication required');
+
+        for ($attempts = 0; $attempts < 3; $attempts++) {
+            $email = text(label: 'Email', required: true);
+            $password = password(label: 'Password', required: true);
+
+            if (Auth::attempt(['email' => $email, 'password' => $password])) {
+                $this->info('Authentication successful.');
+                $this->line('');
+
+                return false;
+            }
+
+            $this->error('Invalid email or password.');
+        }
+
+        $this->error('Too many failed attempts.');
+
+        return true;
     }
 
     protected function getAuthorizedResources(): array
