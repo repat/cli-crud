@@ -13,8 +13,11 @@ class ResourceTest extends TestCase
         $resource = new class extends Resource
         {
             protected static string $model = User::class;
+
             protected static string $label = 'Users';
+
             protected static string $singularLabel = 'User';
+
             protected static ?string $title = 'name';
 
             public static function fields(): array
@@ -36,7 +39,9 @@ class ResourceTest extends TestCase
         $resource = new class extends Resource
         {
             protected static string $model = User::class;
+
             protected static string $label = 'Users';
+
             protected static string $singularLabel = 'User';
 
             public static function fields(): array
@@ -61,8 +66,11 @@ class ResourceTest extends TestCase
         $resource = new class extends Resource
         {
             protected static string $model = User::class;
+
             protected static string $label = 'Users';
+
             protected static string $singularLabel = 'User';
+
             protected static ?string $title = 'nonexistent_column';
 
             public static function fields(): array

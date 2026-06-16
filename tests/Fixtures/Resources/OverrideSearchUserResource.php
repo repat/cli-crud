@@ -13,6 +13,7 @@ class OverrideSearchUserResource extends Resource
     protected static string $label = 'OverrideSearchUsers';
 
     protected static string $singularLabel = 'OverrideSearchUser';
+
     protected static ?string $title = 'name';
 
     /**

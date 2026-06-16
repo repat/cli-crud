@@ -469,7 +469,7 @@ class FormBuilder
 
     protected function displayErrors(array $errors): void
     {
-        echo "\n".Theme::error()."Validation errors:".Theme::resetFg()."\n";
+        echo "\n".Theme::error().'Validation errors:'.Theme::resetFg()."\n";
         foreach ($errors as $field => $fieldErrors) {
             foreach ($fieldErrors as $error) {
                 echo "  - {$field}: {$error}\n";

@@ -4,9 +4,9 @@ namespace Repat\CliCrud\Commands;
 
 use Illuminate\Console\Command;
 use Illuminate\Database\Eloquent\Collection as EloquentCollection;
-use Illuminate\Support\Facades\Auth;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Collection;
+use Illuminate\Support\Facades\Auth;
 use Repat\CliCrud\Actions\Action;
 use Repat\CliCrud\Actions\ActionDispatcher;
 use Repat\CliCrud\Actions\ActionResponse;

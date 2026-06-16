@@ -4,7 +4,6 @@ namespace Repat\CliCrud\Support;
 
 class Chart
 {
-
     protected const BAR_CHAR = '█';
 
     protected const BAR_EMPTY = '░';

@@ -12,6 +12,7 @@ class ThemeTest extends TestCase
         parent::setUp();
         config(['cli-crud.themes' => ['preset' => 'dark']]);
     }
+
     public function test_null_returns_expected_ansi(): void
     {
         $this->assertSame("\e[90m", Theme::null());

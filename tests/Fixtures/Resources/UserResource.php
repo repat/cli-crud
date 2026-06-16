@@ -15,6 +15,7 @@ class UserResource extends Resource
     protected static string $label = 'Users';
 
     protected static string $singularLabel = 'User';
+
     protected static ?string $title = 'name';
 
     public static function fields(): array

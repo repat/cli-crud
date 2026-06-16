@@ -10,7 +10,6 @@ use Repat\CliCrud\Support\ColumnTypeMapper;
 
 class FieldValidator
 {
-
     public function validate(Resource $resource): void
     {
         $model = $resource::getModelInstance();

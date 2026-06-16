@@ -2,7 +2,6 @@
 
 namespace Repat\CliCrud\Tests\Feature;
 
-use Illuminate\Support\Facades\Schema;
 use Repat\CliCrud\Tests\Fixtures\Post;
 use Repat\CliCrud\Tests\Fixtures\User;
 use Repat\CliCrud\Tests\TestCase;
@@ -11,7 +10,7 @@ class CrudCommandTest extends TestCase
 {
     protected function makeTempPath(): string
     {
-        $path = sys_get_temp_dir() . '/cli-crud-test-' . uniqid();
+        $path = sys_get_temp_dir().'/cli-crud-test-'.uniqid();
         mkdir($path, 0755, true);
 
         return $path;
@@ -19,7 +18,7 @@ class CrudCommandTest extends TestCase
 
     protected function cleanTempPath(string $path): void
     {
-        foreach (glob($path . '/*') as $file) {
+        foreach (glob($path.'/*') as $file) {
             unlink($file);
         }
         rmdir($path);
@@ -35,7 +34,7 @@ class CrudCommandTest extends TestCase
             ->expectsOutput('Resource [TestUserResource] created successfully.')
             ->assertExitCode(0);
 
-        $expectedPath = $tempPath . '/TestUserResource.php';
+        $expectedPath = $tempPath.'/TestUserResource.php';
         $this->assertFileExists($expectedPath);
 
         $content = file_get_contents($expectedPath);
@@ -74,7 +73,7 @@ class CrudCommandTest extends TestCase
             ->expectsOutput('Resource [ModelUserResource] created successfully.')
             ->assertExitCode(0);
 
-        $expectedPath = $tempPath . '/ModelUserResource.php';
+        $expectedPath = $tempPath.'/ModelUserResource.php';
         $this->assertFileExists($expectedPath);
 
         $content = file_get_contents($expectedPath);
@@ -95,7 +94,7 @@ class CrudCommandTest extends TestCase
             '--model' => User::class,
         ])->assertExitCode(0);
 
-        $expectedPath = $tempPath . '/SchemaUserResource.php';
+        $expectedPath = $tempPath.'/SchemaUserResource.php';
         $content = file_get_contents($expectedPath);
 
         $this->assertStringContainsString("Text::make('Name', 'name')", $content);
@@ -121,7 +120,7 @@ class CrudCommandTest extends TestCase
             '--model' => Post::class,
         ])->assertExitCode(0);
 
-        $expectedPath = $tempPath . '/SchemaPostResource.php';
+        $expectedPath = $tempPath.'/SchemaPostResource.php';
         $content = file_get_contents($expectedPath);
 
         $this->assertStringContainsString("Number::make('User', 'user_id')", $content);
@@ -159,7 +158,7 @@ class CrudCommandTest extends TestCase
         $this->artisan('make:cli-resource', ['name' => 'DefaultFields'])
             ->assertExitCode(0);
 
-        $expectedPath = $tempPath . '/DefaultFieldsResource.php';
+        $expectedPath = $tempPath.'/DefaultFieldsResource.php';
         $content = file_get_contents($expectedPath);
 
         $this->assertStringContainsString("Text::make('Name', 'name')->required()", $content);

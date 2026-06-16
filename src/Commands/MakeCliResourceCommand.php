@@ -6,6 +6,8 @@ use Illuminate\Console\Command;
 use Illuminate\Filesystem\Filesystem;
 use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Str;
+use Repat\CliCrud\Fields\Number;
+use Repat\CliCrud\Fields\Text;
 use Repat\CliCrud\Support\ColumnTypeMapper;
 
 class MakeCliResourceCommand extends Command
@@ -149,11 +151,13 @@ class MakeCliResourceCommand extends Command
 
             if ($name === 'id') {
                 $columnNames[] = $name;
+
                 continue;
             }
 
             if ($name === 'created_at') {
                 $columnNames[] = $name;
+
                 continue;
             }
 
@@ -198,7 +202,7 @@ class MakeCliResourceCommand extends Command
 
     protected function applyTypeModifiers(string $code, string $fieldClass, string $typeName, string $name): string
     {
-        if ($fieldClass === \Repat\CliCrud\Fields\Number::class) {
+        if ($fieldClass === Number::class) {
             $normalized = ColumnTypeMapper::normalizeColumnType($typeName);
 
             if (in_array($normalized, ['decimal', 'float', 'double'])) {
@@ -206,7 +210,7 @@ class MakeCliResourceCommand extends Command
             }
         }
 
-        if ($fieldClass === \Repat\CliCrud\Fields\Text::class) {
+        if ($fieldClass === Text::class) {
             if ($name === 'email') {
                 $code .= '->email()';
             } elseif ($name === 'password') {
