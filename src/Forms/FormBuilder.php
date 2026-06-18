@@ -328,6 +328,14 @@ class FormBuilder
         array|string|null $idError = null,
     ): array {
         $resources = $field->getResources();
+
+        if (empty($resources)) {
+            throw new \RuntimeException(
+                "No resources configured for MorphTo relation '{$field->getName()}'. ".
+                'Call ->resources([...]) on your MorphTo field to specify the possible resource classes.'
+            );
+        }
+
         $typeOptions = [];
         foreach ($resources as $resource) {
             $typeOptions[$resource::class] = $resource::getLabel();

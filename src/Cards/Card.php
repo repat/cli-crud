@@ -24,6 +24,11 @@ abstract class Card
         return new CustomCard($title, $contentResolver);
     }
 
+    public static function image(string $title, Closure $pathResolver): ImageCard
+    {
+        return new ImageCard($title, $pathResolver);
+    }
+
     public function before(): static
     {
         $this->position = 'before';

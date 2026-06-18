@@ -13,10 +13,22 @@ class ColumnFormatter
 
     public static function format(string $column): string
     {
-        if (isset(self::$specialCases[$column])) {
-            return self::$specialCases[$column];
+        if (str_contains($column, '.')) {
+            return implode(' → ', array_map(
+                fn ($segment) => self::formatSegment($segment),
+                explode('.', $column)
+            ));
         }
 
-        return ucfirst(str_replace('_', ' ', $column));
+        return self::formatSegment($column);
+    }
+
+    protected static function formatSegment(string $segment): string
+    {
+        if (isset(self::$specialCases[$segment])) {
+            return self::$specialCases[$segment];
+        }
+
+        return ucfirst(str_replace('_', ' ', $segment));
     }
 }

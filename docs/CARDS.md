@@ -1,8 +1,10 @@
 # Cards
 
-Cards are supplementary panels displayed in the detail view, either before or after the relation tables. Three card types are available via static factory methods on the base `Card` class.
+Cards are supplementary panels displayed in the detail view, either before or after the relation tables. Four card types are available via static factory methods on the base `Card` class.
 
 All card closures receive `(Model $model, Resource $resource)` and are called once per detail view render.
+
+## Different Type Cards
 
 ### Custom Card
 
@@ -79,7 +81,20 @@ Card::chart('Temperature vs Sales', function ($model, $resource) {
 })->scatter(),
 ```
 
-### Position
+### Image Card
+
+Displays an image using terminal escape sequences. The closure should return a local file path or URL. Supported protocols: **Kitty** (default) and **iTerm2**.
+
+```php
+Card::image('Photo', fn ($model, $resource) => storage_path('app/photos/'.$model->photo)),
+
+// Force iTerm2 protocol
+Card::image('Screenshot', fn () => public_path('screenshot.png'))->iterm(),
+```
+
+When the image can't be loaded (file not found, unsupported format), a fallback message is shown instead.
+
+## Position
 
 Cards render after relations by default. Use `->before()` to render them before relations (between the field values and the relation tables).
 
@@ -87,7 +102,7 @@ Cards render after relations by default. Use `->before()` to render them before 
 Card::custom('Quick Stats', fn ($m, $r) => '…')->before(),
 ```
 
-### Multiple cards
+## Multiple cards
 
 Return multiple cards from `cards()` — they are rendered in the order returned.
 

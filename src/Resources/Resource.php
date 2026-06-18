@@ -177,6 +177,38 @@ abstract class Resource
     }
 
     /**
+     * Extract relationship paths that need eager loading from tableColumns().
+     * Dot-notation columns like "user.name" or "user.profile.bio" are parsed
+     * to determine which relationships must be loaded to avoid N+1 queries.
+     *
+     * @return array<int, string>
+     */
+    public static function getEagerLoads(): array
+    {
+        $paths = [];
+
+        foreach (static::tableColumns() as $col) {
+            if (! str_contains($col, '.')) {
+                continue;
+            }
+
+            $parts = explode('.', $col);
+
+            if ($parts[0] === 'pivot') {
+                continue;
+            }
+
+            array_pop($parts);
+
+            if (! empty($parts)) {
+                $paths[] = implode('.', $parts);
+            }
+        }
+
+        return array_unique($paths);
+    }
+
+    /**
      * @return array<Card>
      */
     public static function getCards(): array

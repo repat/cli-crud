@@ -53,6 +53,13 @@ abstract class Relation
 
     public function getResource(): Resource
     {
+        if ($this->resourceClass === '') {
+            throw new \RuntimeException(
+                "No resource class configured for relation '{$this->name}'. ".
+                'Provide a class-string to a Resource, or for MorphTo relations call ->resources([...]) instead.'
+            );
+        }
+
         return new $this->resourceClass;
     }
 

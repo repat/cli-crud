@@ -171,7 +171,14 @@ class DetailViewRenderer
 
         $resources = $relation->getResources();
 
-        return $resources[0] ?? $relation->getResource();
+        if (empty($resources)) {
+            throw new \RuntimeException(
+                "No resources configured for MorphTo relation '{$relation->getName()}'. ".
+                'Call ->resources([...]) on your MorphTo field to specify the possible resource classes.'
+            );
+        }
+
+        return $resources[0];
     }
 
     protected function calculateDimensions(array $fields, string $title): void
@@ -270,13 +277,20 @@ class DetailViewRenderer
 
     protected function renderRelation(Model $model, Relation $relation): void
     {
-        $relatedItems = $model->{$relation->getName()}()->get();
+        $relatedResource = $relation->getResource();
+        $query = $model->{$relation->getName()}();
+
+        $eagerLoads = $relatedResource::getEagerLoads();
+        if (! empty($eagerLoads)) {
+            $query->with($eagerLoads);
+        }
+
+        $relatedItems = $query->get();
 
         if ($relatedItems->isEmpty()) {
             return;
         }
 
-        $relatedResource = $relation->getResource();
         $relationLabel = $relation->getLabel();
         $columns = $relatedResource::tableColumns();
 

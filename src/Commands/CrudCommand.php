@@ -215,6 +215,11 @@ class CrudCommand extends Command
         $totalPages = max(1, ceil($total / $perPage));
         $page = max(1, min($page, $totalPages));
 
+        $eagerLoads = $resource::getEagerLoads();
+        if (! empty($eagerLoads)) {
+            $query->with($eagerLoads);
+        }
+
         $items = $query->skip(($page - 1) * $perPage)->take($perPage)->get();
 
         $this->info("\n".$this->renderListHeader($resource::getLabel(), $search, $sortColumn, $sortDirection));
@@ -264,10 +269,13 @@ class CrudCommand extends Command
         $modelInstance = $resource::getModelInstance();
         $casts = $modelInstance->getCasts();
 
-        // Exclude columns cast to array or json — they can't be displayed in a flat table
+        // Exclude columns cast to array or json — they can't be displayed in a flat table.
+        // Skip dot-notation columns: casts are on the current model, not related models.
         $columns = array_values(array_filter(
             $columns,
-            fn ($col) => ! isset($casts[$col]) || ! in_array($casts[$col], ['array', 'json'], true)
+            fn ($col) => str_contains($col, '.')
+                || ! isset($casts[$col])
+                || ! in_array($casts[$col], ['array', 'json'], true)
         ));
 
         $headers = array_map(fn ($col) => ColumnFormatter::format($col), $columns);
@@ -280,7 +288,7 @@ class CrudCommand extends Command
                 $value = data_get($item, $column);
                 $formatted = $this->formatTableValueForDatatable($value);
 
-                if (isset($casts[$column]) && $casts[$column] === 'boolean') {
+                if (! str_contains($column, '.') && isset($casts[$column]) && $casts[$column] === 'boolean') {
                     $formatted = $this->centerPad($formatted, $headerWidths[$colIndex]);
                 }
 

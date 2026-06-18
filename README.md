@@ -82,7 +82,7 @@ See [docs/ACTIONS.md](docs/ACTIONS.md) for creating and attaching Nova-style act
 
 ## Cards
 
-See [docs/CARDS.md](docs/CARDS.md) for Metric, Chart, and Custom cards in the detail view.
+See [docs/CARDS.md](docs/CARDS.md) for Chart, Image and Custom cards in the detail view.
 
 ## Authorization
 
