@@ -83,16 +83,24 @@ Card::chart('Temperature vs Sales', function ($model, $resource) {
 
 ### Image Card
 
-Displays an image using terminal escape sequences. The closure should return a local file path or URL. Supported protocols: **Kitty** (default) and **iTerm2**.
+Displays an image using terminal graphics protocols inside a titled box. The closure should return a local file path or URL.
+
+Supported protocols (auto-detected by default):
+
+- **Kitty** ([graphics protocol](https://sw.kovidgoyal.net/kitty/graphics-protocol/)) — auto-detected on Kitty/WezTerm, also the fallback
+- **iTerm2** ([inline images protocol](https://iterm2.com/documentation-images.html)) — auto-detected on iTerm2
 
 ```php
 Card::image('Photo', fn ($model, $resource) => storage_path('app/photos/'.$model->photo)),
+
+// Force Kitty protocol
+Card::image('Logo', fn () => public_path('logo.png'))->kitty(),
 
 // Force iTerm2 protocol
 Card::image('Screenshot', fn () => public_path('screenshot.png'))->iterm(),
 ```
 
-When the image can't be loaded (file not found, unsupported format), a fallback message is shown instead.
+When the image can't be loaded (file not found, unsupported format), a fallback message is shown in the same titled box.
 
 ## Position
 
