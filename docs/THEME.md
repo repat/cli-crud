@@ -20,7 +20,7 @@ Individual ANSI codes can be overridden by setting the corresponding key in the 
 ],
 ```
 
-Available theme keys: `null`, `true`, `false`, `enum`, `json_key`, `json_string`, `json_number`, `json_keyword`, `error`, `heading`, `invalid_json`, `code`, `blockquote`, `hr`, `chart`.
+Available theme keys: `null`, `true`, `false`, `enum`, `json_key`, `json_string`, `json_number`, `json_keyword`, `error`, `heading`, `invalid_json`, `code`, `blockquote`, `hr`, `relation_value`, `chart`.
 
 ## Terminal Color Coding
 

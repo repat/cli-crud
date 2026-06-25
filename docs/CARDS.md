@@ -1,6 +1,6 @@
 # Cards
 
-Cards are supplementary panels displayed in the detail view, either before or after the relation tables. Four card types are available via static factory methods on the base `Card` class.
+Cards are supplementary panels displayed in the detail view, either before or after the relation tables. Three card types are available via static factory methods on the base `Card` class.
 
 All card closures receive `(Model $model, Resource $resource)` and are called once per detail view render.
 

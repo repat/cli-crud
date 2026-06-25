@@ -40,7 +40,7 @@ return [
         'relation_per_page' => 10,
     ],
     'authorization' => [
-        'enabled' => true,
+        'enabled' => false,
     ],
 ];
 ```
