@@ -9,7 +9,7 @@ use Repat\CliCrud\Support\TerminalImage;
 
 class ImageCard extends Card
 {
-    protected string $protocol = 'kitty';
+    protected string $protocol = 'auto';
 
     public function __construct(
         string $title,
@@ -57,9 +57,14 @@ class ImageCard extends Card
         // Scale to fit a reasonable terminal width (~80ch ≈ 320px at 4px/ch)
         $displayWidth = min($width, 320);
 
-        $sequence = match ($this->protocol) {
+        // Estimate display columns from pixel width (~8px per character cell)
+        $displayCols = (int) max(1, ceil($displayWidth / 8));
+
+        $protocol = $this->protocol === 'auto' ? TerminalImage::detectProtocol() : $this->protocol;
+
+        $sequence = match ($protocol) {
             'iterm' => TerminalImage::iterm($path, $displayWidth),
-            default => TerminalImage::kitty($path, $displayWidth),
+            default => TerminalImage::kitty($path, $displayCols),
         };
 
         return $sequence;

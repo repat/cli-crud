@@ -32,11 +32,15 @@ class ImageCardTest extends TestCase
         parent::tearDown();
     }
 
-    public function test_default_protocol_is_kitty(): void
+    public function test_default_protocol_auto_detects(): void
     {
         $card = new ImageCard('Test', fn () => $this->testImage);
 
-        $this->assertStringStartsWith("\e_G", $card->render(new User, $this->createResource()));
+        $output = $card->render(new User, $this->createResource());
+
+        $this->assertNotEmpty($output);
+        $this->assertStringNotContainsString('File not found', $output);
+        $this->assertStringNotContainsString('No path provided', $output);
     }
 
     public function test_iterm_sets_protocol(): void
