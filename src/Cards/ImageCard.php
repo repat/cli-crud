@@ -54,10 +54,10 @@ class ImageCard extends Card
 
         $width = $dimensions[0];
 
-        // Scale to fit a reasonable terminal width (~80ch ≈ 320px at 4px/ch)
+        // Scale to fit a reasonable terminal width
         $displayWidth = min($width, 320);
 
-        // Estimate display columns from pixel width (~8px per character cell)
+        // Estimate display columns from pixel width
         $displayCols = (int) max(1, ceil($displayWidth / 8));
 
         $protocol = $this->protocol === 'auto' ? TerminalImage::detectProtocol() : $this->protocol;
@@ -67,7 +67,18 @@ class ImageCard extends Card
             default => TerminalImage::kitty($path, $displayCols),
         };
 
-        return $sequence;
+        $titleLen = mb_strlen($this->title);
+        $boxWidth = max($displayCols + 4, $titleLen + 4);
+        $boxWidth = min($boxWidth, 120);
+
+        $output = '';
+        $output .= '╭'.str_repeat('─', $boxWidth - 2).'╮'."\n";
+        $output .= '│ '.str_pad($this->title, $boxWidth - 4).' │'."\n";
+        $output .= '├'.str_repeat('─', $boxWidth - 2).'┤'."\n";
+        $output .= '│ '.$sequence."\n";
+        $output .= '╰'.str_repeat('─', $boxWidth - 2).'╯';
+
+        return $output;
     }
 
     protected function resolvePath(string $path): string
@@ -90,6 +101,18 @@ class ImageCard extends Card
 
     protected function renderFallback(string $message): string
     {
-        return $this->title."\n".str_repeat('─', mb_strlen($this->title))."\n".$message."\n";
+        $titleLen = mb_strlen($this->title);
+        $msgLen = mb_strlen($message);
+        $boxWidth = max($titleLen + 4, $msgLen + 4);
+        $boxWidth = min($boxWidth, 120);
+
+        $output = '';
+        $output .= '╭'.str_repeat('─', $boxWidth - 2).'╮'."\n";
+        $output .= '│ '.str_pad($this->title, $boxWidth - 4).' │'."\n";
+        $output .= '├'.str_repeat('─', $boxWidth - 2).'┤'."\n";
+        $output .= '│ '.str_pad($message, $boxWidth - 4).' │'."\n";
+        $output .= '╰'.str_repeat('─', $boxWidth - 2).'╯';
+
+        return $output;
     }
 }

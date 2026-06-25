@@ -39,6 +39,7 @@ class ImageCardTest extends TestCase
         $output = $card->render(new User, $this->createResource());
 
         $this->assertNotEmpty($output);
+        $this->assertStringContainsString('Test', $output);
         $this->assertStringNotContainsString('File not found', $output);
         $this->assertStringNotContainsString('No path provided', $output);
     }
@@ -47,7 +48,7 @@ class ImageCardTest extends TestCase
     {
         $card = (new ImageCard('Test', fn () => $this->testImage))->iterm();
 
-        $this->assertStringStartsWith("\e]1337", $card->render(new User, $this->createResource()));
+        $this->assertStringContainsString("\e]1337", $card->render(new User, $this->createResource()));
     }
 
     public function test_kitty_returns_static_for_chaining(): void
