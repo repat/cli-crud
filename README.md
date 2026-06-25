@@ -89,11 +89,12 @@ See [docs/CARDS.md](docs/CARDS.md) for Chart, Image and Custom cards in the deta
 
 See [docs/AUTHORIZATION.md](docs/AUTHORIZATION.md) for enabling Laravel Gates/Policies integration.
 
-## Planned Features
+## Roadmap
 
-- Export (CSV, JSON)
-- Action log (audit trail)
 - Dashboards
+- Action log (audit trail)
+- Plugins
+- Export (CSV, JSON)
 - TUI testing
 - Code Cleanup
 
