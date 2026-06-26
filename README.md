@@ -1,5 +1,10 @@
 # repat/cli-crud
 
+[![Latest Version on Packagist](https://img.shields.io/packagist/v/repat/cli-crud.svg?style=flat-square)](https://packagist.org/packages/repat/cli-crud)
+[![Total Downloads](https://img.shields.io/packagist/dt/repat/cli-crud.svg?style=flat-square)](https://packagist.org/packages/repat/cli-crud)
+[![License](https://img.shields.io/packagist/l/repat/cli-crud.svg?style=flat-square)](https://packagist.org/packages/repat/cli-crud)
+[![PHP Version](https://img.shields.io/packagist/php-v/repat/cli-crud.svg?style=flat-square)](https://packagist.org/packages/repat/cli-crud)
+
 ![Main screen](img/main-screen.png)
 
 A **CLI CRUD admin panel** for Laravel, inspired by [Filament](https://filamentphp.com/) and [Laravel Nova](http://nova.laravel.com/). Built with [`laravel/prompts`](https://laravel.com/docs/13.x/prompts) and [`nunomaduro/termwind`](https://github.com/nunomaduro/termwind).
