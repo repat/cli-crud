@@ -7,7 +7,8 @@ class ActionResponse
     public function __construct(
         public readonly ?string $message = null,
         public readonly bool $danger = false,
-    ) {}
+    ) {
+    }
 
     public static function message(string $message): self
     {

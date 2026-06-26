@@ -7,7 +7,9 @@ class ActionFields
     /**
      * @param  array<string, mixed>  $values
      */
-    public function __construct(protected array $values = []) {}
+    public function __construct(protected array $values = [])
+    {
+    }
 
     public function __get(string $name): mixed
     {

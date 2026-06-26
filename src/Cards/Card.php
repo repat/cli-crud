@@ -12,7 +12,8 @@ abstract class Card
 
     public function __construct(
         protected string $title
-    ) {}
+    ) {
+    }
 
     public static function chart(string $title, Closure $dataResolver): ChartCard
     {

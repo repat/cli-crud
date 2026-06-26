@@ -8,7 +8,9 @@ use Illuminate\Database\Eloquent\Collection;
 
 class ActionDispatcher
 {
-    public function __construct(protected Dispatcher $bus) {}
+    public function __construct(protected Dispatcher $bus)
+    {
+    }
 
     public function dispatch(Action $action, Collection $models, ActionFields $fields): ActionResponse
     {

@@ -1095,7 +1095,9 @@ class DetailViewRendererTest extends TestCase
 
             protected static ?string $title = 'id';
 
-            public function __construct(private User $user) {}
+            public function __construct(private User $user)
+            {
+            }
 
             public static function fields(): array
             {

@@ -15,7 +15,8 @@ class MorphExists implements DataAwareRule, ValidationRule
     public function __construct(
         protected string $typeColumn,
         protected string $idColumn,
-    ) {}
+    ) {
+    }
 
     /**
      * @param  array<string, mixed>  $data
