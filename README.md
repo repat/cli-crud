@@ -1,6 +1,8 @@
 # repat/cli-crud
 
-A CLI CRUD admin panel for Laravel, inspired by [Filament](https://filamentphp.com/) and [Laravel Nova](http://nova.laravel.com/). Built with [`laravel/prompts`](https://laravel.com/docs/13.x/prompts) and [`nunomaduro/termwind`](https://github.com/nunomaduro/termwind).
+![Main screen](img/main-screen.png)
+
+A **CLI CRUD admin panel** for Laravel, inspired by [Filament](https://filamentphp.com/) and [Laravel Nova](http://nova.laravel.com/). Built with [`laravel/prompts`](https://laravel.com/docs/13.x/prompts) and [`nunomaduro/termwind`](https://github.com/nunomaduro/termwind).
 
 ## Requirements
 
@@ -64,6 +66,10 @@ This opens an interactive menu where you can:
 - Run an action for (a) record(s)
 - View custom cards & charts for metrics
 - View images ([kitty](https://sw.kovidgoyal.net/kitty/) and [iTerm](https://iterm2.com/documentation-images.html) protocol)
+
+## Screenshots
+
+<a href="img/selection-screen.png"><img src="img/selection-screen.png" alt="Selection screen" width="600" /></a>
 
 ## Resources
 
