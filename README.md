@@ -2,6 +2,8 @@
 
 [![Latest Version on Packagist](https://img.shields.io/packagist/v/repat/cli-crud.svg?style=flat-square)](https://packagist.org/packages/repat/cli-crud)
 [![Total Downloads](https://img.shields.io/packagist/dt/repat/cli-crud.svg?style=flat-square)](https://packagist.org/packages/repat/cli-crud)
+[![Tests](https://img.shields.io/github/actions/workflow/status/repat/cli-crud/tests.yml?style=flat-square)](https://github.com/repat/cli-crud/actions/workflows/tests.yml)
+[![StyleCI](https://img.shields.io/styleci/1266185185?style=flat-square)](https://styleci.io/repos/1266185185)
 [![License](https://img.shields.io/packagist/l/repat/cli-crud.svg?style=flat-square)](https://packagist.org/packages/repat/cli-crud)
 [![PHP Version](https://img.shields.io/packagist/php-v/repat/cli-crud.svg?style=flat-square)](https://packagist.org/packages/repat/cli-crud)
 
