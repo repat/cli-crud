@@ -697,11 +697,16 @@ class CrudCommand extends Command
         $data = $this->formBuilder->build($allFields, null, $resource);
 
         if (confirm("Save this {$resource::getSingularLabel()}?")) {
-            $modelClass = $resource::getModel();
-            $model = $modelClass::create($data);
+            try {
+                $modelClass = $resource::getModel();
+                $model = $modelClass::create($data);
 
-            $this->info("{$resource::getSingularLabel()} created successfully!");
-            $this->showDetailView($resourceClass, $model, $search, $sortColumn, $sortDirection);
+                $this->info("{$resource::getSingularLabel()} created successfully!");
+                $this->showDetailView($resourceClass, $model, $search, $sortColumn, $sortDirection);
+            } catch (\Exception $e) {
+                $this->error($e->getMessage());
+                $this->showResourceMenu($resourceClass);
+            }
         } else {
             $this->showResourceMenu($resourceClass);
         }
@@ -739,9 +744,13 @@ class CrudCommand extends Command
         }
 
         if (confirm("Save changes to this {$resource::getSingularLabel()}?")) {
-            $model->update($data);
+            try {
+                $model->update($data);
 
-            $this->info("{$resource::getSingularLabel()} updated successfully!");
+                $this->info("{$resource::getSingularLabel()} updated successfully!");
+            } catch (\Exception $e) {
+                $this->error($e->getMessage());
+            }
         }
 
         $this->showDetailView($resourceClass, $model, $search, $sortColumn, $sortDirection);
@@ -758,8 +767,12 @@ class CrudCommand extends Command
         }
 
         if (confirm("Are you sure you want to delete this {$resource::getSingularLabel()}?")) {
-            $model->delete();
-            $this->info("{$resource::getSingularLabel()} deleted successfully!");
+            try {
+                $model->delete();
+                $this->info("{$resource::getSingularLabel()} deleted successfully!");
+            } catch (\Exception $e) {
+                $this->error($e->getMessage());
+            }
         }
     }
 
@@ -774,8 +787,12 @@ class CrudCommand extends Command
         }
 
         if (confirm("Are you sure you want to permanently delete this {$resource::getSingularLabel()}? This cannot be undone.")) {
-            $model->forceDelete();
-            $this->info("{$resource::getSingularLabel()} permanently deleted!");
+            try {
+                $model->forceDelete();
+                $this->info("{$resource::getSingularLabel()} permanently deleted!");
+            } catch (\Exception $e) {
+                $this->error($e->getMessage());
+            }
         }
     }
 
@@ -790,9 +807,13 @@ class CrudCommand extends Command
         }
 
         if (confirm("Restore this {$resource::getSingularLabel()}?")) {
-            // @phpstan-ignore method.notFound (gated by usesSoftDeletes() in the caller; restore() comes from the SoftDeletes trait)
-            $model->restore();
-            $this->info("{$resource::getSingularLabel()} restored successfully!");
+            try {
+                // @phpstan-ignore method.notFound (gated by usesSoftDeletes() in the caller; restore() comes from the SoftDeletes trait)
+                $model->restore();
+                $this->info("{$resource::getSingularLabel()} restored successfully!");
+            } catch (\Exception $e) {
+                $this->error($e->getMessage());
+            }
         }
     }
 
