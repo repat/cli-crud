@@ -1,6 +1,7 @@
 {
     "name": "repat/cli-crud",
     "description": "CLI CRUD admin panel for Laravel, inspired by Filament and Nova",
+    "version": "0.1",
     "keywords": [
         "laravel",
         "cli",
@@ -53,6 +54,6 @@
     "config": {
         "sort-packages": true
     },
-    "minimum-stability": "dev",
+    "minimum-stability": "stable",
     "prefer-stable": true
 }
