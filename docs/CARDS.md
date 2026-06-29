@@ -44,6 +44,8 @@ public static function cards(): array
 
 <a href="../img/bar-chart-dashboard.png"><img src="../img/bar-chart-dashboard.png" alt="Bar chart dashboard" width="600" /></a>
 
+<a href="../img/horizontal-bar-chart-dashboard.png"><img src="../img/horizontal-bar-chart-dashboard.png" alt="Horizontal bar chart dashboard" width="600" /></a>
+
 Renders an ASCII bar or horizontal bar chart. The closure must return an associative array of `['label' => value, …]`.
 
 ```php
@@ -63,8 +65,6 @@ public static function cards(): array
 ```
 
 Chart types: `bar()` (default), `horizontalBar()`, `scatter()`.
-
-<a href="../img/horizontal-bar-chart-dashboard.png"><img src="../img/horizontal-bar-chart-dashboard.png" alt="Horizontal bar chart dashboard" width="600" /></a>
 
 To show percentages of the total instead of raw values, chain `->percentage()`:
 
@@ -89,6 +89,8 @@ Card::chart('Temperature vs Sales', function ($model, $resource) {
 
 ### Image Card
 
+<a href="../img/image-dashboard.png"><img src="../img/image-dashboard.png" alt="Image dashboard" width="600" /></a>
+
 Displays an image using terminal graphics protocols inside a titled box. The closure should return a local file path or URL.
 
 Supported protocols (auto-detected by default):
@@ -107,8 +109,6 @@ Card::image('Screenshot', fn () => public_path('screenshot.png'))->iterm(),
 ```
 
 When the image can't be loaded (file not found, unsupported format), a fallback message is shown in the same titled box.
-
-<a href="../img/image-dashboard.png"><img src="../img/image-dashboard.png" alt="Image dashboard" width="600" /></a>
 
 ## Position
 

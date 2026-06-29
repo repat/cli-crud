@@ -80,13 +80,13 @@ This opens an interactive menu where you can:
 
 <a href="img/list-screen.png"><img src="img/list-screen.png" alt="List screen" width="600" /></a>
 
+<a href="img/pagination-screen.png"><img src="img/pagination-screen.png" alt="Pagination screen" width="600" /></a>
+
 <a href="img/detail-screen.png"><img src="img/detail-screen.png" alt="Detail screen" width="600" /></a>
 
 <a href="img/detail-selection-screen.png"><img src="img/detail-selection-screen.png" alt="Detail selection screen" width="600" /></a>
 
 <a href="img/edit-screen.png"><img src="img/edit-screen.png" alt="Edit screen" width="600" /></a>
-
-<a href="img/pagination-screen.png"><img src="img/pagination-screen.png" alt="Pagination screen" width="600" /></a>
 
 ## Resources
 
