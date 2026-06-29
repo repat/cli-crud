@@ -59,6 +59,8 @@ class UserResource extends Resource
 
 ### Soft Deletes
 
+<a href="../img/deletion-screen.png"><img src="../img/deletion-screen.png" alt="Deletion screen" width="600" /></a>
+
 If your model uses the `SoftDeletes` trait, the package automatically:
 
 - Shows a toggle to view trashed records
@@ -74,5 +76,7 @@ php artisan make:cli-resource User --model=\App\Models\User
 ```
 
 See [FIELDS.md](FIELDS.md) for all field types and options, [SEARCH.md](SEARCH.md) for declaring searchable fields, and [CARDS.md](CARDS.md) for detail-view cards.
+
+<a href="../img/sort-screen.png"><img src="../img/sort-screen.png" alt="Sort screen" width="600" /></a>
 
 [← Back to README](../README.md)

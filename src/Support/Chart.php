@@ -175,9 +175,13 @@ class Chart
         }
 
         // Build rows from top to bottom
+        $lastYLabel = null;
         for ($row = $plotHeight - 1; $row >= 0; $row--) {
             $yVal = $minY + ($rangeY * $row / max($plotHeight - 1, 1));
-            $output .= str_pad((string) round($yVal), $yLabelWidth, ' ', STR_PAD_LEFT).' │';
+            $yLabel = (string) round($yVal);
+            $labelStr = ($yLabel !== $lastYLabel) ? str_pad($yLabel, $yLabelWidth, ' ', STR_PAD_LEFT) : str_repeat(' ', $yLabelWidth);
+            $lastYLabel = $yLabel;
+            $output .= $labelStr.' │';
 
             for ($col = 0; $col < $plotWidth; $col++) {
                 if (isset($pixelPositions[$col][$row])) {

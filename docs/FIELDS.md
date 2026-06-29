@@ -46,6 +46,8 @@ These methods are available on every field type:
 
 ## Relations
 
+<a href="../img/relationships-screen.png"><img src="../img/relationships-screen.png" alt="Relationships screen" width="600" /></a>
+
 All relation types use the signature `Relation::make(string $label, string $resourceClass)` or `Relation::make(string $label, string $name, string $resourceClass)` where `$label` is the display name, `$name` is the optional relationship method name on the model, and `$resourceClass` is the related resource class. If `$name` is omitted, it will be automatically derived from the label.
 
 ### Fillable (appear in create/edit forms)
@@ -91,6 +93,8 @@ All relation types use the signature `Relation::make(string $label, string $reso
   - Displayed as a paginated sub-table in the detail view
 
 ## Field Validation
+
+<a href="../img/validation-screen.png"><img src="../img/validation-screen.png" alt="Validation screen" width="600" /></a>
 
 The package validates that your field definitions match the database schema. If there's a mismatch, a `FieldMismatchException` is thrown.
 
