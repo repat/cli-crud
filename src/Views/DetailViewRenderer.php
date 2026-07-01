@@ -245,6 +245,27 @@ class DetailViewRenderer
         $formattedValue = $field['formatted'];
         $plainValue = $this->getPlainText($formattedValue);
 
+        if ($this->hasAnsiCodes($formattedValue) && str_contains($formattedValue, "\n")) {
+            $ansiLines = explode("\n", $formattedValue);
+            foreach ($ansiLines as $i => $ansiLine) {
+                if ($i === 0) {
+                    $content = ' '.$label.$ansiLine;
+                    $remaining = $this->boxWidth - 4 - mb_strlen($label) - mb_strlen($this->getPlainText($ansiLine));
+                    $content .= str_repeat(' ', max(0, $remaining));
+                    $content .= ' ';
+                } else {
+                    $emptyLabel = $this->mb_str_pad('', $this->labelWidth + self::LABEL_PADDING, ' ');
+                    $content = ' '.$emptyLabel.$ansiLine;
+                    $remaining = $this->boxWidth - 4 - mb_strlen($emptyLabel) - mb_strlen($this->getPlainText($ansiLine));
+                    $content .= str_repeat(' ', max(0, $remaining));
+                    $content .= ' ';
+                }
+                $this->output(self::BOX['vertical'].$content.self::BOX['vertical']);
+            }
+
+            return;
+        }
+
         $lines = $this->wrapText($plainValue, $this->valueWidth);
 
         if (empty($lines)) {
