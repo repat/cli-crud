@@ -76,6 +76,8 @@ Card::chart('Orders per Month', fn ($model, $resource) => [
 
 ### Scatter Chart
 
+<a href="../img/scatter-chart-dashboard.png"><img src="../img/scatter-chart-dashboard.png" alt="Scatter Chart dashboard" width="600" /></a>
+
 Plots `[x, y]` coordinate pairs on a 2D grid. The closure must return an associative array where each key is a label and each value is a `[x, y]` array.
 
 ```php
