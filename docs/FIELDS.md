@@ -37,6 +37,9 @@ These methods are available on every field type:
 
 - `Textarea::make('Content')` or `Textarea::make('Content', 'content')` — Multi-line text input
   - `->markdown()` — Render content as Markdown in the detail view (requires `league/commonmark`)
+
+<a href="../img/markdown-in-detail-screen.png"><img src="../img/markdown-in-detail-screen.png" alt="Markdown in detail screen" width="600" /></a>
+
   - `->required()`, `->nullable()`, `->default()`, `->rules()`
 
 - `Json::make('Config')` or `Json::make('Config', 'config')` — JSON textarea input
@@ -56,6 +59,8 @@ All relation types use the signature `Relation::make(string $label, string $reso
   - `->displayField('name')` — Column used to display/search options
   - `->required()` — Require a selection (default: optional with a "— None —" option)
   - Uses inline search for large datasets
+
+<a href="../img/belongs-to-relationships-in-detail-screen.png"><img src="../img/belongs-to-relationships-in-detail-screen.png" alt="BelongsTo relationships in detail screen" width="600" /></a>
 
 - `MorphTo::make('Commentable', 'commentable', [PostResource::class])` — Polymorphic BelongsTo
   - `->displayField('title')` — Column used to display/search options

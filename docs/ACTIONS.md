@@ -2,7 +2,7 @@
 
 Actions are Nova-style tasks that can be triggered against the currently selected record from the list or detail view. They support a `handle()` method, optional input fields, a `ShouldQueue` opt-in for background processing, and a destructive variant that requires an extra confirmation.
 
-### Creating Actions
+## Creating Actions
 
 Generate a new action:
 
@@ -49,7 +49,7 @@ class EmailAccountProfileAction extends Action
 }
 ```
 
-### Attaching Actions to a Resource
+## Attaching Actions to a Resource
 
 Declare actions in the resource's `actions()` method. Class strings and pre-built instances are both accepted:
 
@@ -68,7 +68,7 @@ class UserResource extends Resource
 
 When the resource has at least one action, the list view and detail view will show a `Run action...` sub-menu option. The sub-menu only appears when actions are registered, matching Nova's behavior.
 
-### Action Fields
+## Action Fields
 
 Declare any of the standard `Field` types (Text, Number, Boolean, Select, Textarea) in `fields()`. The user is prompted for each value before the action runs:
 
@@ -95,7 +95,7 @@ public function handle(Collection $models, ActionFields $fields): ActionResponse
 }
 ```
 
-### Destructive Actions
+## Destructive Actions
 
 Subclass `DestructiveAction` (or call `->destructive()` on an instance) to require an extra confirmation. The CLI marks destructive actions with a `[DESTRUCTIVE]` prefix in the action menu and the confirmation prompt:
 
@@ -113,7 +113,7 @@ class BanUserAction extends DestructiveAction
 }
 ```
 
-### Queued Actions
+## Queued Actions
 
 Implement `Illuminate\Contracts\Queue\ShouldQueue` to dispatch the action in the background. The `ActionDispatcher` injects the models and fields onto the action before it is pushed to the bus, so the queued worker reuses the same `handle()`:
 
@@ -128,12 +128,12 @@ class EmailAccountProfileAction extends Action implements ShouldQueue
 
 When the action is queued, the CLI prints `Action queued for background processing.` instead of the action's own response.
 
-### Response Helpers
+## Response Helpers
 
 - `ActionResponse::message(string $msg)` — success
 - `ActionResponse::danger(string $msg)` — failure (printed in red by the CLI)
 
-### Action Options
+## Action Options
 
 - `->name(string)` — override the display name in the menu (defaults to a headlined version of the class name with the trailing `Action` stripped)
 - `->confirmText(string)` / `->confirmButtonText(string)` / `->cancelButtonText(string)` — customize the confirmation prompt

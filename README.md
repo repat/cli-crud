@@ -76,17 +76,18 @@ This opens an interactive menu where you can:
 
 ## Screenshots
 
-<a href="img/resource-selection-screen.png"><img src="img/resource-selection-screen.png" alt="Resource selection screen" width="600" /></a>
-
-<a href="img/list-screen.png"><img src="img/list-screen.png" alt="List screen" width="600" /></a>
-
-<a href="img/pagination-screen.png"><img src="img/pagination-screen.png" alt="Pagination screen" width="600" /></a>
-
-<a href="img/detail-screen.png"><img src="img/detail-screen.png" alt="Detail screen" width="600" /></a>
-
-<a href="img/detail-selection-screen.png"><img src="img/detail-selection-screen.png" alt="Detail selection screen" width="600" /></a>
-
-<a href="img/edit-screen.png"><img src="img/edit-screen.png" alt="Edit screen" width="600" /></a>
+<table>
+<tr>
+  <td><a href="img/resource-selection-screen.png"><img src="img/resource-selection-screen.png" alt="Resource selection" width="250" /></a></td>
+  <td><a href="img/list-screen.png"><img src="img/list-screen.png" alt="List" width="250" /></a></td>
+  <td><a href="img/detail-screen.png"><img src="img/detail-screen.png" alt="Detail" width="250" /></a></td>
+</tr>
+<tr>
+  <td><a href="img/detail-selection-screen.png"><img src="img/detail-selection-screen.png" alt="Detail selection" width="250" /></a></td>
+  <td><a href="img/edit-screen.png"><img src="img/edit-screen.png" alt="Edit" width="250" /></a></td>
+  <td><a href="img/pagination-screen.png"><img src="img/pagination-screen.png" alt="Pagination" width="250" /></a></td>
+</tr>
+</table>
 
 ## Resources
 

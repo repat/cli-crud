@@ -57,6 +57,32 @@ class UserResource extends Resource
 | `$singularLabel` | Yes | Singular display name |
 | `$title` | Yes | Column used to identify records in menus and BelongsTo searches |
 
+### Relationship Columns
+
+Use dot notation in `tableColumns()` to display columns from related models in the list view. Relationships are automatically eager-loaded so no N+1 queries occur.
+
+```php
+class PostResource extends Resource
+{
+    protected static string $model = \App\Models\Post::class;
+
+    public static function fields(): array
+    {
+        return [
+            Text::make('Title')->required(),
+            BelongsTo::make('User', 'user', UserResource::class)->displayField('name'),
+        ];
+    }
+
+    public static function tableColumns(): array
+    {
+        return ['id', 'title', 'user.name', 'user.email', 'created_at'];
+    }
+}
+```
+
+Column headers render with arrows: `user.name` becomes `User → Name`. Values are resolved through the Eloquent relationship at render time. Dot-notation columns are excluded from sorting since they can't be used in a simple `ORDER BY`.
+
 ### Soft Deletes
 
 <a href="../img/deletion-screen.png"><img src="../img/deletion-screen.png" alt="Deletion screen" width="600" /></a>
