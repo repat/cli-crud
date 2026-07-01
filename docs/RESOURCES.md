@@ -59,29 +59,7 @@ class UserResource extends Resource
 
 ### Relationship Columns
 
-Use dot notation in `tableColumns()` to display columns from related models in the list view. Relationships are automatically eager-loaded so no N+1 queries occur.
-
-```php
-class PostResource extends Resource
-{
-    protected static string $model = \App\Models\Post::class;
-
-    public static function fields(): array
-    {
-        return [
-            Text::make('Title')->required(),
-            BelongsTo::make('User', 'user', UserResource::class)->displayField('name'),
-        ];
-    }
-
-    public static function tableColumns(): array
-    {
-        return ['id', 'title', 'user.name', 'user.email', 'created_at'];
-    }
-}
-```
-
-Column headers render with arrows: `user.name` becomes `User → Name`. Values are resolved through the Eloquent relationship at render time. Dot-notation columns are excluded from sorting since they can't be used in a simple `ORDER BY`.
+Use dot notation in `tableColumns()` to display columns from related models in the list view. See [RELATIONSHIPS.md](RELATIONSHIPS.md) for details and examples.
 
 ### Soft Deletes
 

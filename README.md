@@ -95,7 +95,11 @@ See [docs/RESOURCES.md](docs/RESOURCES.md) for creating resources, the generated
 
 ## Fields
 
-See [docs/FIELDS.md](docs/FIELDS.md) for all field types, relations, and options.
+See [docs/FIELDS.md](docs/FIELDS.md) for all scalar field types and options.
+
+## Relationships
+
+See [docs/RELATIONSHIPS.md](docs/RELATIONSHIPS.md) for relation field types (BelongsTo, HasMany, MorphTo, etc.) and displaying relationship columns in the list view.
 
 ## Search
 
